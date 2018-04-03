@@ -1,8 +1,8 @@
 import numpy as np
-import preprocessing as pp
+import preproc as pp
 
 def gen_I(n):
-    harmony_n = np.random.randint(1,8)
+    harmony_n = np.random.randint(2,8)
     f = np.array([1,3,5,7,9,11,13]) * 50  # frequency space
 
     # ------ Signal properties ------ #
@@ -39,7 +39,7 @@ def gen_sum():
 
 
 def save_signal(i,F,A,P,I,label):
-    np.savetxt("signal_{}_prop.txt".format(i), (F, A, P), delimiter=',')
+    np.savetxt("signal_{}_prop.txt".format(i), (F, A, P), fmt='%.3f', delimiter=',')
     np.savetxt("signal_{}_val.txt".format(i), I, fmt='%.7f', delimiter='\n')
     np.savetxt("signal_{}_label.txt".format(i), label, fmt='%i', delimiter='\n')
 
