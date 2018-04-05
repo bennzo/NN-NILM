@@ -11,7 +11,7 @@ F, A, P, I = utilities.load_signal(1, 'data\lab-noiseless')
 print(F)
 print(A)
 print(P)
-print(A+P)
+
 I_t = I[0:1600]
 I_fft = preproc.fft(I_t)
 I_fft_amp, I_fft_phase  = preproc.fft_amp_phase(I_fft)
