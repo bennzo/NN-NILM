@@ -11,9 +11,9 @@ def gen_I(n):
     A = np.sort(np.random.randint(1, 10, size=harmony_n))[::-1]     # amplitude vector
 
     # ------ Generate Signal ------ #
-    Fs = 1400;                                                                                  # sampling rate
+    Fs = 2*f[-1];                                                                                  # sampling rate
     Ts = 1.0 / Fs;                                                                              # sampling interval
-    T_fin = 1200                                                                                # measuring window
+    T_fin = 4                                                                                # measuring window
     t = np.arange(0, T_fin, Ts)                                                                 # time vector
     I_t = np.array([np.sin(2 * np.pi * F * t[i] + P) for i in range(0, np.size(t))]).dot(A)     # signal
 
@@ -44,7 +44,14 @@ def save_signal(i,F,A,P,I,label):
     np.savetxt("signal_{}_label.txt".format(i), label, fmt='%i', delimiter='\n')
 
 def load_signal(i, folder_name):
-    F, A, P = np.loadtxt(folder_name + "\signal_{}_prop.txt".format(i), delimiter=',')
-    I = np.loadtxt(folder_name + "\signal_{}_val.txt".format(i))
+    F, A, P = np.loadtxt(folder_name + "signal_{}_prop.txt".format(i), delimiter=',')
+    I = np.loadtxt(folder_name + "signal_{}_val.txt".format(i))
     return F, A, P, I
 
+def load_sum(folder_name):
+    I = np.loadtxt(folder_name + "signal_sum_val.txt")
+    I_label = np.loadtxt(folder_name + "signal_sum_label.txt", delimiter=',')
+    return I, I_label
+
+def compare_input(I1,I2):
+    return np.sqrt(((I1 - I2)**2).sum())
