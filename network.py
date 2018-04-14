@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
-import torchvision.datasets as dsets
-import torchvision.transforms as transforms
+import torch.utils.data as data_utils
 import torch.utils.data
 from torch.autograd import Variable
 import numpy as np
@@ -15,18 +14,28 @@ num_epochs = 10
 batch_size = 20
 learning_rate = 1e-3
 
-train_data, train_labels, test_data, test_loader = preproc.data_init('data\lab-noiseless\\')
+train_data, train_labels, test_data, test_labels = preproc.data_init('data\lab-noiseless\\')
 
-train_dataset = preproc.fftDataset(train_data, train_labels, transform=preproc.ToTensor())
-test_dataset = preproc.fftDataset(test_data, test_loader, transform=preproc.ToTensor())
+# Independent datasets
+# train_dataset = preproc.fftDataset(train_data, train_labels, transform=preproc.ToTensor())
+# test_dataset = preproc.fftDataset(test_data, test_loader, transform=preproc.ToTensor())
+#
+# train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+#                                            batch_size=batch_size,
+#                                            shuffle=False)
+#
+# test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+#                                           batch_size=batch_size,
+#                                           shuffle=False)
 
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
-                                           batch_size=batch_size,
-                                           shuffle=False)
 
-test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-                                          batch_size=batch_size,
-                                          shuffle=False)
+# Pytorch datasets
+train_dataset = data_utils.TensorDataset(torch.from_numpy(train_data).float(), torch.from_numpy(train_labels).float())
+test_dataset = data_utils.TensorDataset(torch.from_numpy(test_data).float(), torch.from_numpy(test_labels).float())
+
+train_loader = data_utils.DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+test_loader = data_utils.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
 
 # Neural Network Model
 class Net(nn.Module):
@@ -43,47 +52,48 @@ print("running section a network")
 net = Net(input_size, num_classes)
 
 # Loss and Optimizer
-criterion = nn.CrossEntropyLoss()
+criterion = nn.MSELoss()
 optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
 
 train_accuracy_1 = np.zeros(num_epochs)
 # Train the Model
 for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_loader):
+    for i, (signals, appliances) in enumerate(train_loader):
         # Convert torch tensor to Variable
-        images = Variable(images.view(-1, 28 * 28))
-        labels = Variable(labels)
+        signals = Variable(signals)
+        appliances = Variable(appliances)
 
         # zero the parameter gradients
         optimizer.zero_grad()
 
         # forward + backward + optimize
-        outputs = net(images)
-        loss = criterion(outputs, labels)
+        outputs = net(signals)
+        loss = criterion(outputs, appliances)
         loss.backward()
         optimizer.step()
     # print loss at the end of each batch
     correct = 0
     total = 0
-    for images, labels in train_loader:
-        images = Variable(images.view(-1, 28 * 28))
-        outputs = net(images)
+    for signals, appliances in train_loader:
+        signals = Variable(signals)
+        appliances = Variable(appliances)
+        outputs = net(signals)
         _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum()
+        total += appliances.size(0)
+        correct += (predicted == appliances).sum()
     train_accuracy_1[epoch] = correct / total
     print('Accuracy of the network on the training set after the %d epoch: %d %%' % (epoch + 1, 100 * correct / total))
 
 # Test the Model
 correct = 0
 total = 0
-for images, labels in test_loader:
-    images = Variable(images.view(-1, 28 * 28))
-    outputs = net(images)
+for signals, appliances in test_loader:
+    signals = Variable(signals)
+    outputs = net(signals)
     _, predicted = torch.max(outputs.data, 1)
-    total += labels.size(0)
-    correct += (predicted == labels).sum()
-    total += labels.size(0)
+    total += appliances.size(0)
+    correct += (predicted == appliances).sum()
+    total += appliances.size(0)
 
 print('Accuracy of the network on the 10000 test images: %d %%' % (100 * correct / total))
 
