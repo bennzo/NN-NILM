@@ -2,18 +2,18 @@ import numpy as np
 import preproc as pp
 
 def gen_I(n):
-    harmony_n = np.random.randint(2,8)
+    harmony_n = 1#np.random.randint(2,8)
     f = np.array([1,3,5,7,9,11,13]) * 50  # frequency space
 
     # ------ Signal properties ------ #
-    F = np.sort(np.random.choice(f, harmony_n, replace=False))      # frequency vector
+    F = np.array([650])#np.sort(np.random.choice(f, harmony_n, replace=False))      # frequency vector
     P = np.random.uniform(-1 / 2 * np.pi, 1 / 2 * np.pi, harmony_n) # phase vector
     A = np.sort(np.random.randint(1, 10, size=harmony_n))[::-1]     # amplitude vector
 
     # ------ Generate Signal ------ #
     Fs = 2*f[-1];                                                                                  # sampling rate
     Ts = 1.0 / Fs;                                                                              # sampling interval
-    T_fin = 4                                                                                # measuring window
+    T_fin = 200                                                                                # measuring window
     t = np.arange(0, T_fin, Ts)                                                                 # time vector
     I_t = np.array([np.sin(2 * np.pi * F * t[i] + P) for i in range(0, np.size(t))]).dot(A)     # signal
 

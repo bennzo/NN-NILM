@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.utils.data as data_utils
 import torch.utils.data
 from torch.autograd import Variable
@@ -10,7 +11,7 @@ import preproc
 input_size = 14
 output_size = 5
 num_classes = 5
-num_epochs = 10
+num_epochs = 1000
 batch_size = 20
 learning_rate = 1e-3
 
@@ -41,10 +42,12 @@ test_loader = data_utils.DataLoader(test_dataset, batch_size=batch_size, shuffle
 class Net(nn.Module):
     def __init__(self, input_size, num_classes):
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(input_size, num_classes)
+        self.fc1 = nn.Linear(input_size, 50)
+        self.fc2 = nn.Linear(50, num_classes)
 
     def forward(self, x):
-        out = self.fc1(x)
+        out = nn.functional.sigmoid(self.fc1(x))
+        out = nn.functional.sigmoid(self.fc2(out))
         return out
 
 
@@ -52,7 +55,7 @@ print("running section a network")
 net = Net(input_size, num_classes)
 
 # Loss and Optimizer
-criterion = nn.MSELoss()
+criterion = nn.BCELoss()
 optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
 
 train_accuracy_1 = np.zeros(num_epochs)
@@ -78,9 +81,8 @@ for epoch in range(num_epochs):
         signals = Variable(signals)
         appliances = Variable(appliances)
         outputs = net(signals)
-        _, predicted = torch.max(outputs.data, 1)
         total += appliances.size(0)
-        correct += (predicted == appliances).sum()
+        correct += np.sum(np.all(appliances.data == torch.round(outputs.data), axis = 1))
     train_accuracy_1[epoch] = correct / total
     print('Accuracy of the network on the training set after the %d epoch: %d %%' % (epoch + 1, 100 * correct / total))
 
@@ -90,12 +92,11 @@ total = 0
 for signals, appliances in test_loader:
     signals = Variable(signals)
     outputs = net(signals)
-    _, predicted = torch.max(outputs.data, 1)
     total += appliances.size(0)
-    correct += (predicted == appliances).sum()
+    correct += np.sum(np.all(appliances == torch.round(outputs.data), axis=1))
     total += appliances.size(0)
 
-print('Accuracy of the network on the 10000 test images: %d %%' % (100 * correct / total))
+print('Accuracy of the network on the test set: %d %%' % (100 * correct / total))
 
 # Save the Model
-torch.save(net.state_dict(), 'model_1.pkl')
+#torch.save(net.state_dict(), 'model_1.pkl')

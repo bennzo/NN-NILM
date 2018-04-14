@@ -35,8 +35,8 @@ def data_init(data_dir):
     raw_data, raw_labels = utilities.load_sum(data_dir)
     data_size = np.shape(raw_labels)[0]
 
-    Fs = 1600
-    win = 160
+    Fs = 1300
+    win = 130
 
     for i in range(0, data_size, win):
         I_t = raw_data[i:i + win]
