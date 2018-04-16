@@ -2,8 +2,12 @@ import numpy as np
 import utilities
 import torch.utils.data
 from torch.utils.data.dataset import Dataset
-import preproc
 import torch
+
+opt = {
+    'Fs' : 2*650+50,
+    'sample_time' : 0.1
+}
 
 class fftDataset(Dataset):
     def __init__(self, data=None, labels=None, transform=None):
@@ -35,21 +39,31 @@ def data_init(data_dir):
     raw_data, raw_labels = utilities.load_sum(data_dir)
     data_size = np.shape(raw_labels)[0]
 
-    Fs = 1300
-    win = 130
+    Fs = opt['Fs']
+    win = int(opt['Fs']*opt['sample_time'])
 
     for i in range(0, data_size, win):
+        # Filter out windows with a change in active appliances
+        label = raw_labels[i]
+        skip = False
+        for t in range(win):
+            if np.all(label == raw_labels[t]):
+                skip == True
+                break
+        if skip:
+            continue
+
         I_t = raw_data[i:i + win]
-        I_fft = preproc.fft(I_t)
-        I_fft_amp, I_fft_phase = preproc.fft_amp_phase(I_fft)
+        I_fft = fft(I_t)
+        I_fft_amp, I_fft_phase = fft_amp_phase(I_fft)
 
         # TODO: add majority for labels
         if i == 0:
-            data = preproc.fft2input(I_fft_amp, I_fft_phase, Fs)
-            labels = raw_labels[i]
+            data = fft2input(I_fft_amp, I_fft_phase, Fs)
+            labels = label
         else:
-            data = np.vstack((data, preproc.fft2input(I_fft_amp, I_fft_phase, Fs)))
-            labels = np.vstack((labels, raw_labels[i]))
+            data = np.vstack((data, fft2input(I_fft_amp, I_fft_phase, Fs)))
+            labels = np.vstack((labels, label))
 
     n = np.shape(data)[0]
     shuffle_idx = np.random.RandomState(0).permutation(np.array(range(0,n)))
@@ -66,8 +80,10 @@ def data_init(data_dir):
     return train_data_unscaled, train_labels, test_data_unscaled, test_labels
 
 
-def fft(I_t):
+def fft(I_t, noise=False):
     n = len(I_t)  # length of the signal
+    if noise:
+        I_t += np.random.normal(0,1,n)*(I_t*0.01)
     I_fft = np.fft.fft(I_t)/(n/2)   # fft computing and normalization
     I_fft = I_fft[range(int(n/2))]  # one side frequency range
     return I_fft
@@ -81,7 +97,7 @@ def fft_amp_phase(I_fft, threshold=0.1):
     return I_fft_amp, I_fft_phase
 
 def fft2input(I_fft_amp, I_fft_phase, Fs):
-    harmonies = np.array([1, 3, 5, 7, 9, 11, 13])*((len(I_fft_amp)*2)/(Fs/50))
+    harmonies = np.array([1, 3, 5, 7, 9, 11, 13])*round((len(I_fft_amp)*2)/(Fs/50))
     harmonies = harmonies.astype(int)
     IN = np.concatenate((I_fft_amp[harmonies],I_fft_phase[harmonies]))
     return IN

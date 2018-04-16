@@ -11,8 +11,8 @@ import preproc
 input_size = 14
 output_size = 5
 num_classes = 5
-num_epochs = 1000
-batch_size = 20
+num_epochs = 100
+batch_size = 30
 learning_rate = 1e-3
 
 train_data, train_labels, test_data, test_labels = preproc.data_init('data\lab-noiseless\\')
@@ -43,11 +43,13 @@ class Net(nn.Module):
     def __init__(self, input_size, num_classes):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(input_size, 50)
-        self.fc2 = nn.Linear(50, num_classes)
+        #self.fc2 = nn.Linear(20, 50)
+        self.fc3 = nn.Linear(50, num_classes)
 
     def forward(self, x):
-        out = nn.functional.sigmoid(self.fc1(x))
-        out = nn.functional.sigmoid(self.fc2(out))
+        out = nn.functional.relu(self.fc1(x))
+        #out = nn.functional.relu(self.fc2(out))
+        out = nn.functional.sigmoid(self.fc3(out))
         return out
 
 
@@ -94,7 +96,6 @@ for signals, appliances in test_loader:
     outputs = net(signals)
     total += appliances.size(0)
     correct += np.sum(np.all(appliances == torch.round(outputs.data), axis=1))
-    total += appliances.size(0)
 
 print('Accuracy of the network on the test set: %d %%' % (100 * correct / total))
 
