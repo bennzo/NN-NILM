@@ -12,7 +12,7 @@ def gen_I(n):
     A = np.sort(np.random.randint(1, 10, size=harmony_n))[::-1]     # amplitude vector
 
     # ------ Generate Signal ------ #
-    Fs = 2*650+50 #pp.opt['Fs'];                                                                                  # sampling rate
+    Fs = pp.opt['Fs'];                                                                                  # sampling rate
     Ts = 1.0 / Fs;                                                                              # sampling interval
     T_fin = 200                                                                                # measuring window
     t = np.arange(0, T_fin, Ts)                                                                 # time vector

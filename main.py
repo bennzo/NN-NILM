@@ -13,7 +13,7 @@ I, I_label = utilities.load_sum('data\lab-noiseless\\')
 # print(P)
 
 I_t = I[0:int(preproc.opt['Fs']*preproc.opt['sample_time'])]
-I_fft = preproc.fft(I_t)
+I_fft = preproc.fft(I_t, True)
 I_fft_amp, I_fft_phase  = preproc.fft_amp_phase(I_fft)
 
 
@@ -24,7 +24,7 @@ T = n/Fs
 frq = k/T                   # two sides frequency range
 frq = frq[range(int(n/2))]  # one side frequency range
 
-#print(preproc.fft2input(I_fft_amp, I_fft_phase, Fs))
+print(preproc.fft2input(I_fft_amp, I_fft_phase, Fs))
 
 fig1 = plt.figure()
 p1 = fig1.add_subplot(111)

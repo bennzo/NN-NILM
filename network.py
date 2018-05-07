@@ -43,12 +43,12 @@ class Net(nn.Module):
     def __init__(self, input_size, num_classes):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(input_size, 50)
-        #self.fc2 = nn.Linear(20, 50)
+        self.fc2 = nn.Linear(50, 50)
         self.fc3 = nn.Linear(50, num_classes)
 
     def forward(self, x):
         out = nn.functional.relu(self.fc1(x))
-        #out = nn.functional.relu(self.fc2(out))
+        out = nn.functional.relu(self.fc2(out))
         out = nn.functional.sigmoid(self.fc3(out))
         return out
 
@@ -86,7 +86,7 @@ for epoch in range(num_epochs):
         total += appliances.size(0)
         correct += np.sum(np.all(appliances.data == torch.round(outputs.data), axis = 1))
     train_accuracy_1[epoch] = correct / total
-    print('Accuracy of the network on the training set after the %d epoch: %d %%' % (epoch + 1, 100 * correct / total))
+    print('Accuracy of the network on the training set after the {0} epoch: {1:.2f} %'.format(epoch + 1, 100 * correct / total))
 
 # Test the Model
 correct = 0
@@ -97,7 +97,7 @@ for signals, appliances in test_loader:
     total += appliances.size(0)
     correct += np.sum(np.all(appliances == torch.round(outputs.data), axis=1))
 
-print('Accuracy of the network on the test set: %d %%' % (100 * correct / total))
+print('Accuracy of the network on the test set: {0:.2f} %'.format(100 * correct / total))
 
 # Save the Model
 #torch.save(net.state_dict(), 'model_1.pkl')
