@@ -6,7 +6,9 @@ import torch
 
 opt = {
     'Fs' : 2*650+50,
-    'sample_time' : 0.1
+    'sample_time' : 0.1,
+    'noise' : True,
+    'noise_percentage' : 0.1
 }
 
 class fftDataset(Dataset):
@@ -54,7 +56,7 @@ def data_init(data_dir):
             continue
 
         I_t = raw_data[i:i + win]
-        I_fft = fft(I_t)
+        I_fft = fft(I_t,opt['noise'])
         I_fft_amp, I_fft_phase = fft_amp_phase(I_fft)
 
         # TODO: add majority for labels
@@ -79,11 +81,10 @@ def data_init(data_dir):
 
     return train_data_unscaled, train_labels, test_data_unscaled, test_labels
 
-
 def fft(I_t, noise=False):
     n = len(I_t)  # length of the signal
     if noise:
-        I_t += np.random.normal(0,1,n)*(I_t*0.1)
+        I_t += np.random.normal(0,1,n)*(I_t*opt['noise_percentage'])
     I_fft = np.fft.fft(I_t)/(n/2)   # fft computing and normalization
     I_fft = I_fft[range(int(n/2))]  # one side frequency range
     return I_fft

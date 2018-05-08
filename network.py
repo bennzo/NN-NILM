@@ -5,7 +5,10 @@ import torch.utils.data as data_utils
 import torch.utils.data
 from torch.autograd import Variable
 import numpy as np
+import sklearn.preprocessing
 import preproc
+import matplotlib.pyplot as plt
+
 
 # Hyper Parameters
 input_size = 14
@@ -14,29 +17,6 @@ num_classes = 5
 num_epochs = 100
 batch_size = 30
 learning_rate = 1e-3
-
-train_data, train_labels, test_data, test_labels = preproc.data_init('data\lab-noiseless\\')
-
-# Independent datasets
-# train_dataset = preproc.fftDataset(train_data, train_labels, transform=preproc.ToTensor())
-# test_dataset = preproc.fftDataset(test_data, test_loader, transform=preproc.ToTensor())
-#
-# train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
-#                                            batch_size=batch_size,
-#                                            shuffle=False)
-#
-# test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-#                                           batch_size=batch_size,
-#                                           shuffle=False)
-
-
-# Pytorch datasets
-train_dataset = data_utils.TensorDataset(torch.from_numpy(train_data).float(), torch.from_numpy(train_labels).float())
-test_dataset = data_utils.TensorDataset(torch.from_numpy(test_data).float(), torch.from_numpy(test_labels).float())
-
-train_loader = data_utils.DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
-test_loader = data_utils.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
 
 # Neural Network Model
 class Net(nn.Module):
@@ -52,8 +32,21 @@ class Net(nn.Module):
         out = nn.functional.sigmoid(self.fc3(out))
         return out
 
+# Build data arrays
+train_data, train_labels, test_data, test_labels = preproc.data_init('data\lab-noise\\')
 
-print("running section a network")
+# Scale data
+train_data = sklearn.preprocessing.scale(train_data, axis=0, with_std=False)
+test_data = sklearn.preprocessing.scale(test_data, axis=0, with_std=False)
+
+# Pytorch datasets
+train_dataset = data_utils.TensorDataset(torch.from_numpy(train_data).float(), torch.from_numpy(train_labels).float())
+test_dataset = data_utils.TensorDataset(torch.from_numpy(test_data).float(), torch.from_numpy(test_labels).float())
+
+train_loader = data_utils.DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+test_loader = data_utils.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+print("Initializing NN")
 net = Net(input_size, num_classes)
 
 # Loss and Optimizer
@@ -101,3 +94,12 @@ print('Accuracy of the network on the test set: {0:.2f} %'.format(100 * correct 
 
 # Save the Model
 #torch.save(net.state_dict(), 'model_1.pkl')
+
+# fig1 = plt.figure()
+# p1 = fig1.add_subplot(111)
+# p1.plot(range(0,110,10), noise_acc, 'b')
+# p1.grid(True)
+# p1.set_title('Accuracy for noise')
+# p1.set_xlabel('Noise Percentage')
+# p1.set_ylabel('Accuracy')
+# plt.show()

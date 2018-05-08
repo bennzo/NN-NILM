@@ -63,5 +63,5 @@ def load_sum(folder_name):
 def compare_input(I1,I2):
     return np.sqrt(((I1 - I2)**2).sum())
 
-# if name == '__main__':
-#     gen_sum()
+if __name__ == "__main__":
+    gen_sum()
