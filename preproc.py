@@ -8,7 +8,8 @@ opt = {
     'Fs' : 2*650+50,
     'sample_time' : 0.1,
     'noise' : True,
-    'noise_percentage' : 0.1
+    'noise_percentage' : 0.1,
+    'train_test_ratio' : 0.9
 }
 
 class fftDataset(Dataset):
@@ -59,7 +60,6 @@ def data_init(data_dir):
         I_fft = fft(I_t,opt['noise'])
         I_fft_amp, I_fft_phase = fft_amp_phase(I_fft)
 
-        # TODO: add majority for labels
         if i == 0:
             data = fft2input(I_fft_amp, I_fft_phase, Fs)
             labels = label
@@ -70,8 +70,8 @@ def data_init(data_dir):
     n = np.shape(data)[0]
     shuffle_idx = np.random.RandomState(0).permutation(np.array(range(0,n)))
 
-    train_idx = shuffle_idx[0:int(n*0.9)]
-    test_idx = shuffle_idx[int(n*0.9):n]
+    train_idx = shuffle_idx[0:int(n*opt['train_test_ratio'])]
+    test_idx = shuffle_idx[int(n*opt['train_test_ratio']):n]
 
     train_data_unscaled = data[train_idx].astype(float)
     train_labels = labels[train_idx]
