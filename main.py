@@ -4,7 +4,7 @@ import utilities
 import preproc
 
 
-utilities.plot_signal('data/signal_sum_val.txt', 12351, noise=False)
+utilities.plot_signal('data/signal_5_val.txt',260000, noise=False)
 
 
 # F, A, P, I = utilities.load_signal(1, 'data\lab-noise\\')
