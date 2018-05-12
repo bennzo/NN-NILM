@@ -6,17 +6,9 @@ import torch.utils.data
 from torch.autograd import Variable
 import numpy as np
 import sklearn.preprocessing
+import utilities as util
 import preproc
 import matplotlib.pyplot as plt
-
-
-# Hyper Parameters
-input_size = 14
-output_size = 5
-num_classes = 5
-num_epochs = 100
-batch_size = 30
-learning_rate = 1e-3
 
 # Neural Network Model
 class Net(nn.Module):
@@ -34,7 +26,7 @@ class Net(nn.Module):
 
 
 # Build data arrays
-train_data, train_labels, test_data, test_labels = preproc.data_init('data\lab-noiseless-perfect\\')
+train_data, train_labels, test_data, test_labels = preproc.data_init('data\\')
 
 # Scale data
 # train_data = sklearn.preprocessing.scale(train_data, axis=0, with_std=False)
@@ -44,19 +36,19 @@ train_data, train_labels, test_data, test_labels = preproc.data_init('data\lab-n
 train_dataset = data_utils.TensorDataset(torch.from_numpy(train_data).float(), torch.from_numpy(train_labels).float())
 test_dataset = data_utils.TensorDataset(torch.from_numpy(test_data).float(), torch.from_numpy(test_labels).float())
 
-train_loader = data_utils.DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
-test_loader = data_utils.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+train_loader = data_utils.DataLoader(train_dataset, batch_size=util.nn_config['batch_size'], shuffle=False)
+test_loader = data_utils.DataLoader(test_dataset, batch_size=util.nn_config['batch_size'], shuffle=False)
 
 print("Initializing NN")
-net = Net(input_size, num_classes)
+net = Net(util.nn_config['input_size'], util.nn_config['num_classes'])
 
 # Loss and Optimizer
 criterion = nn.BCELoss()
-optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9)
+optimizer = torch.optim.SGD(net.parameters(), lr=util.nn_config['learning_rate'], momentum=0.9)
 
-train_accuracy_1 = np.zeros(num_epochs)
+train_accuracy_1 = np.zeros(util.nn_config['num_epochs'])
 # Train the Model
-for epoch in range(num_epochs):
+for epoch in range(util.nn_config['num_epochs']):
     for i, (signals, appliances) in enumerate(train_loader):
         # Convert torch tensor to Variable
         signals = Variable(signals)
