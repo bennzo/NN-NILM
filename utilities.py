@@ -23,9 +23,6 @@ nn_config = {
 
 # noinspection PyTypeChecker
 def gen_I(path='', n=1,states=1):
-    if states < 1 | states > 4:
-        print('Invalid number of states')
-        return 1
     state_interval = 5
     harmony_n = np.random.randint(2,8)
     f = np.array([1,3,5,7,9,11,13]) * 50  # frequency space
@@ -42,7 +39,7 @@ def gen_I(path='', n=1,states=1):
     # ------ Generate Signal ------ #
     Fs = preproc_config['Fs']                                                                 # sampling rate
     Ts = 1.0 / Fs                                                                             # sampling interval
-    T_fin = 200                                                                               # total time
+    T_fin = 20                                                                               # total time
     t = np.arange(0, T_fin, Ts)                                                               # time vector
     I_t_pre = [None]*states
 
@@ -84,7 +81,7 @@ def gen_I(path='', n=1,states=1):
     label = on
     I_t = I_t*on
 
-    save_signal(n, I_t, label, path, F[0], A[0], P[0], states=states)
+    save_signal(n, I_t, label, path, F, A, P)
     return I_t, label
 
 
@@ -100,15 +97,22 @@ def gen_sum(path='', n=nn_config['num_classes']):
     np.savetxt(path+"signal_sum_val.txt", S_sum, fmt='%.7f', delimiter='\n')
     np.savetxt(path+"signal_sum_label.txt", np.transpose(label_sum), fmt='%i', delimiter=',')
 
-# TODO - rewrite to save all info in signal prop (only first now)
-def save_signal(i, I, label, path, F, A, P, states):
-    np.savetxt(path+"signal_{}_prop.txt".format(i), (F, A, P), fmt='%.3f', delimiter=',')
-    if states > 1:
-        with open(path+"signal_{}_prop.txt".format(i), "a") as p_file:
-            p_file.write("Multi State Load")
+
+def save_signal(i, I, label, path, F, A, P):
     np.savetxt(path+"signal_{}_val.txt".format(i), I, fmt='%.7f', delimiter='\n')
     np.savetxt(path+"signal_{}_label.txt".format(i), label, fmt='%i', delimiter='\n')
-
+    states=len(F)
+    # np.savetxt(path + "signal_{}_prop.txt".format(i), (F[0], A[0], P[0]), fmt='%.3f', delimiter=',')
+    f = open(path+"signal_{}_prop.txt".format(i), 'a+')
+    f.seek(0)
+    f.truncate()
+    if states > 1:
+        f.write("Multi State Load\n")
+    for i in range(0,states):
+        s = "State no." + str(i + 1)+"\n"
+        f.write(s)
+        np.savetxt(f, (F[i], A[i], P[i]), fmt='%.3f', delimiter=',')
+    f.close()
 
 def load_signal(i, folder_name):
     F, A, P = np.loadtxt(folder_name + "signal_{}_prop.txt".format(i), delimiter=',')

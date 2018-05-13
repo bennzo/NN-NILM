@@ -10,6 +10,7 @@ import utilities as util
 import preproc
 import matplotlib.pyplot as plt
 
+
 # Neural Network Model
 class Net(nn.Module):
     def __init__(self, input_size, num_classes):
