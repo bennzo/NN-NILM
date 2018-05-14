@@ -11,23 +11,27 @@ import preproc
 import matplotlib.pyplot as plt
 
 
+data_folder = 'measured_loads//tested//edited//'
+
 # Neural Network Model
 class Net(nn.Module):
     def __init__(self, input_size, num_classes):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(input_size, 50)
         self.fc2 = nn.Linear(50, 50)
-        self.fc3 = nn.Linear(50, num_classes)
+        self.fc3 = nn.Linear(50, 50)
+        self.fc4 = nn.Linear(50, num_classes)
 
     def forward(self, x):
         out = nn.functional.relu(self.fc1(x))
         out = nn.functional.relu(self.fc2(out))
-        out = nn.functional.sigmoid(self.fc3(out))
+        out = nn.functional.relu(self.fc3(out))
+        out = nn.functional.sigmoid(self.fc4(out))
         return out
 
 
 # Build data arrays
-train_data, train_labels, test_data, test_labels = preproc.data_init('data\\')
+train_data, train_labels, test_data, test_labels = preproc.data_init(data_folder)
 
 # Scale data
 # train_data = sklearn.preprocessing.scale(train_data, axis=0, with_std=False)

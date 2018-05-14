@@ -1,23 +1,35 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import preproc
+import scipy.io as sc
 
 preproc_config = {
-    'Fs': 2*650+50,
+    'Fs': 6400, #2*650+50,
     'sample_time': 0.1,
-    'noise': True,
+    'noise': False,
     'noise_percentage': 0.1,
-    'train_test_ratio': 0.8,
-    'threshold': 0.5
+    'train_test_ratio': 0.9,
+    'threshold': 1
 }
 
 nn_config = {
     'input_size': 14,
     'output_size': 5,
     'num_classes': 5,
-    'num_epochs': 100,
+    'num_epochs': 500,
     'batch_size': 30,
-    'learning_rate': 1e-3
+    'learning_rate': 1e-2  # was 1e-3
+}
+
+loads = {
+    0: 'AC_motor_4_37A_load_DB',
+    1: 'AC_motor_DB',
+    2: 'Air_Conditioner1_int_DB',
+    3: 'Air_Conditioner2_int_DB',
+    4: 'INVERTER_13_1PH_DB',
+    5: 'Lamp_int_DB',
+    6: 'Microwave_int_DB',
+    7: 'Toaster_int_DB'
 }
 
 
@@ -85,7 +97,6 @@ def gen_I(path='', n=1,states=1):
     return I_t, label
 
 
-# TODO- add multi states loads to sum
 def gen_sum(path='', n=nn_config['num_classes']):
     S_sum, label_sum = gen_I(path)
     for i in range(2, n+1):
@@ -96,6 +107,25 @@ def gen_sum(path='', n=nn_config['num_classes']):
 
     np.savetxt(path+"signal_sum_val.txt", S_sum, fmt='%.7f', delimiter='\n')
     np.savetxt(path+"signal_sum_label.txt", np.transpose(label_sum), fmt='%i', delimiter=',')
+
+
+# TODO - make the sum choose different loads each run..
+def gen_sum_measured(path='measured_loads\\tested\\edited\\'):
+    lst='Signal made from the following loads:\n'+loads[0]+'\n'
+    I_sum = np.loadtxt(path+'val_'+loads[0]+'.txt')
+    label_sum = np.loadtxt(path + 'label_' + loads[0] + '.txt')
+    for i in range(1,nn_config['num_classes']):
+        lst += loads[i]+'\n'
+        I_temp = np.loadtxt(path + 'val_' + loads[i] + '.txt')
+        temp_label = np.loadtxt(path + 'label_' + loads[i] + '.txt')
+        I_sum += I_temp
+        label_sum = np.vstack((label_sum, temp_label))
+
+    np.savetxt(path+"signal_sum_val.txt", I_sum, fmt='%.7f', delimiter='\n')
+    np.savetxt(path+"signal_sum_label.txt", np.transpose(label_sum), fmt='%i', delimiter=',')
+    f = open(path + "signal_sum_loads.txt", 'w+')
+    f.write(lst)
+    f.close()
 
 
 def save_signal(i, I, label, path, F, A, P):
@@ -113,6 +143,7 @@ def save_signal(i, I, label, path, F, A, P):
         f.write(s)
         np.savetxt(f, (F[i], A[i], P[i]), fmt='%.3f', delimiter=',')
     f.close()
+
 
 def load_signal(i, folder_name):
     F, A, P = np.loadtxt(folder_name + "signal_{}_prop.txt".format(i), delimiter=',')
@@ -152,6 +183,8 @@ def plot_signal(s_path, index=-1,noise=False):
     I_fft = preproc.fft(sampled_I,noise=noise)
     I_fft_amp, I_fft_phase = preproc.fft_amp_phase(I_fft)
 
+    temp=preproc.fft2input(I_fft_amp, I_fft_phase,preproc_config['Fs'])
+
     n = len(sampled_I)                # length of the signal
     k = np.arange(n)
     T = n/preproc_config['Fs']
@@ -186,6 +219,21 @@ def plot_signal(s_path, index=-1,noise=False):
     p3.set_ylabel('deg')
 
     plt.show()
+
+
+def mat2txt(f_path,out_path):
+    mat = sc.loadmat(f_path)
+    raw = mat[((f_path.split('\\', 1)[-1])[0:(len((f_path.split('\\', 1)[-1]))-4)])][0:1][0]
+    if np.shape(raw[0])[1] < 3:
+        phase_idx = 0
+    else:
+        phase_idx = np.argmax(np.sum(np.abs(raw[0]), axis=0)[0:3])
+
+    raw_mat = np.array([raw[i][:, phase_idx] for i in range(len(raw))])
+    data = raw_mat.reshape((1,raw_mat.size))
+    np.savetxt(out_path, data, fmt='%.7f', delimiter='\n')
+
+
 
 if __name__ == "__main__":
     path='data//'
