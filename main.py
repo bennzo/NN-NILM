@@ -4,19 +4,23 @@ import utilities
 import preproc
 from pathlib import Path
 
+# ----- Ben testing ----- #
+#utilities.gen_sum_measured_syn('data/real_world/')
+#-------------------------#
+
 # load='power_thyristor_DB.txt'
 # utilities.plot_signal('measured_loads\\tested\\edited\\signal_sum_val.txt',36000, noise=False)
 
-
 # new_path = 'measured_loads\\tested\\edited\\'
-# utilities.gen_sum_measured()
-# pathlist = Path('measured_loads\\tested').glob('**/*.txt')
+# utilities.gen_sum_measured('measured_loads')
+# pathlist = Path('measured_loads').glob('**/*.mat')      # Set prefix (.mat/.txt) to list intended files
 # c = 0
 # for path in pathlist:
 #     if c == 8:
 #         break
 #     path = str(path)
 #     print(path)
+#
 #     I = np.loadtxt(path)
 #     if not '1PH' in path:
 #         I = np.tile(I,10)
@@ -35,16 +39,12 @@ from pathlib import Path
 #     I = I * on
 #     np.savetxt(new_path +'val_'+path.split('\\', 2)[-1] , I[:200000], fmt='%.7f', delimiter='\n')
 #     np.savetxt(new_path +'label_'+path.split('\\', 2)[-1] , label[:200000], fmt='%i', delimiter='\n')
+#
 #     c += 1
+#
+#     Read mat files
 #     out = 'measured_loads\\' + (path.split('\\', 1)[-1]).replace('.mat','.txt')
 #     utilities.mat2txt(path, out)
-
-
-
-
-
-
-
 
 
 # F, A, P, I = utilities.load_signal(1, 'data\lab-noise\\')

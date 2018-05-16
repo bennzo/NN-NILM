@@ -11,7 +11,7 @@ import preproc
 import matplotlib.pyplot as plt
 
 
-data_folder = 'measured_loads//tested//edited//'
+data_folder = 'data/real_world/'
 
 # Neural Network Model
 class Net(nn.Module):
@@ -19,19 +19,19 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(input_size, 50)
         self.fc2 = nn.Linear(50, 50)
-        self.fc3 = nn.Linear(50, 50)
+        #self.fc3 = nn.Linear(50, 50)
         self.fc4 = nn.Linear(50, num_classes)
 
     def forward(self, x):
         out = nn.functional.relu(self.fc1(x))
         out = nn.functional.relu(self.fc2(out))
-        out = nn.functional.relu(self.fc3(out))
+        #out = nn.functional.relu(self.fc3(out))
         out = nn.functional.sigmoid(self.fc4(out))
         return out
 
 
 # Build data arrays
-train_data, train_labels, test_data, test_labels = preproc.data_init(data_folder)
+train_data, train_labels, test_data, test_labels = preproc.data_init_syn(data_folder)
 
 # Scale data
 # train_data = sklearn.preprocessing.scale(train_data, axis=0, with_std=False)
@@ -41,15 +41,15 @@ train_data, train_labels, test_data, test_labels = preproc.data_init(data_folder
 train_dataset = data_utils.TensorDataset(torch.from_numpy(train_data).float(), torch.from_numpy(train_labels).float())
 test_dataset = data_utils.TensorDataset(torch.from_numpy(test_data).float(), torch.from_numpy(test_labels).float())
 
-train_loader = data_utils.DataLoader(train_dataset, batch_size=util.nn_config['batch_size'], shuffle=False)
-test_loader = data_utils.DataLoader(test_dataset, batch_size=util.nn_config['batch_size'], shuffle=False)
+train_loader = data_utils.DataLoader(train_dataset, batch_size=util.nn_config['batch_size'], shuffle=True)
+test_loader = data_utils.DataLoader(test_dataset, batch_size=util.nn_config['batch_size'], shuffle=True)
 
 print("Initializing NN")
 net = Net(util.nn_config['input_size'], util.nn_config['num_classes'])
 
 # Loss and Optimizer
 criterion = nn.BCELoss()
-optimizer = torch.optim.SGD(net.parameters(), lr=util.nn_config['learning_rate'], momentum=0.9)
+optimizer = torch.optim.SGD(net.parameters(), lr=util.nn_config['learning_rate'], momentum=0.7)
 
 train_accuracy_1 = np.zeros(util.nn_config['num_epochs'])
 # Train the Model

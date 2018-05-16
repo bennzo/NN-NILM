@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import preproc
 import scipy.io as sc
 
 preproc_config = {
@@ -8,7 +7,7 @@ preproc_config = {
     'sample_time': 0.1,
     'noise': False,
     'noise_percentage': 0.1,
-    'train_test_ratio': 0.9,
+    'train_test_ratio': 0.6,
     'threshold': 1
 }
 
@@ -16,22 +15,21 @@ nn_config = {
     'input_size': 14,
     'output_size': 5,
     'num_classes': 5,
-    'num_epochs': 500,
+    'num_epochs': 200,
     'batch_size': 30,
-    'learning_rate': 1e-2  # was 1e-3
+    'learning_rate': 1e-3
 }
 
 loads = {
-    0: 'AC_motor_4_37A_load_DB',
-    1: 'AC_motor_DB',
-    2: 'Air_Conditioner1_int_DB',
-    3: 'Air_Conditioner2_int_DB',
-    4: 'INVERTER_13_1PH_DB',
-    5: 'Lamp_int_DB',
-    6: 'Microwave_int_DB',
-    7: 'Toaster_int_DB'
+    5: 'AC_motor_4_37A_load_DB',
+    6: 'AC_motor_DB',
+    0: 'Air_Conditioner1_int_DB',
+    1: 'Air_Conditioner2_int_DB',
+    7: 'INVERTER_13_1PH_DB',
+    2: 'Lamp_int_DB',
+    3: 'Microwave_int_DB',
+    4: 'Toaster_int_DB'
 }
-
 
 # noinspection PyTypeChecker
 def gen_I(path='', n=1,states=1):
@@ -128,6 +126,29 @@ def gen_sum_measured(path='measured_loads\\tested\\edited\\'):
     f.close()
 
 
+# Generate summarized signal from measured loads
+# including every load configuration possible
+# For example:
+# the load for the label 1,0,0,1,0 will appear in I_sum[bin(10010)*sig_len):(1+bin(10010))*sig_len)]
+def gen_sum_measured_syn(path):
+    num_classes = nn_config['num_classes']
+    I_signals = np.array([np.loadtxt(path + loads[i] + '.txt') for i in range(0, num_classes)])
+    sig_len = np.shape(I_signals)[1]
+
+    I_sum = np.zeros(sig_len*(2**num_classes))
+    I_sum_label = np.zeros((sig_len*(2**num_classes),num_classes))
+    for i in range(1,2**num_classes):
+        # Create a binary representation of i as an array
+        comb = np.array(list(np.binary_repr(i, num_classes)), dtype=int)
+
+        # Sum the signals in the combination into I_sum
+        I_sum[i*sig_len:(i + 1)*sig_len] = I_signals[np.where(comb == 1)].sum(axis=0)
+        I_sum_label[i*sig_len:(i + 1)*sig_len,:] = comb
+
+    np.savetxt(path+"signal_sum_val.txt", I_sum, fmt='%.7f', delimiter='\n')
+    np.savetxt(path+"signal_sum_label.txt", I_sum_label, fmt='%i', delimiter=',')
+
+
 def save_signal(i, I, label, path, F, A, P):
     np.savetxt(path+"signal_{}_val.txt".format(i), I, fmt='%.7f', delimiter='\n')
     np.savetxt(path+"signal_{}_label.txt".format(i), label, fmt='%i', delimiter='\n')
@@ -160,65 +181,65 @@ def load_sum(folder_name):
 def compare_input(I1,I2):
     return np.sqrt(((I1 - I2)**2).sum())
 
-
-def plot_signal(s_path, index=-1,noise=False):
-    label_path = s_path.replace('_val', '_label')
-    sample_win = int(preproc_config['Fs']*preproc_config['sample_time'])
-    I = np.loadtxt(s_path)
-    I_label = np.loadtxt(label_path, delimiter=',')
-    if index > (len(I)-sample_win-1):
-        print('index inserted is not valid')
-        return 1
-    if index < 0:
-        index = np.random.randint(0,(len(I)-sample_win-1))
-    if not('sum' in s_path):
-        for i in range(index, (len(I)-sample_win-1)):
-            if I_label[i] == 0:
-                continue
-            else:
-                break
-        index = i
-    sampled_I = I[index:index+sample_win]
-    # sampled_label = I_label[index:index+sample_win]
-    I_fft = preproc.fft(sampled_I,noise=noise)
-    I_fft_amp, I_fft_phase = preproc.fft_amp_phase(I_fft)
-
-    temp=preproc.fft2input(I_fft_amp, I_fft_phase,preproc_config['Fs'])
-
-    n = len(sampled_I)                # length of the signal
-    k = np.arange(n)
-    T = n/preproc_config['Fs']
-    frq = k/T
-    frq = frq[range(int(n/2))]
-
-    # Plot Signal
-    fig1 = plt.figure()
-    p1 = fig1.add_subplot(111)
-    p1.plot(range(n), sampled_I, 'b')
-    p1.set_title('Current Signal')
-    p1.set_xlabel('time')
-    p1.set_ylabel('I(A)')
-
-    # Plot Amplitudes and Phase
-    # Amplitude
-    fig2 = plt.figure()
-    p2 = fig2.add_subplot(121)
-    p2.plot(frq, I_fft_amp, 'r.')
-    p2.vlines(frq,[0],I_fft_amp)
-    p2.grid(True)
-    p2.set_title('Amplitude')
-    p2.set_xlabel('Freq')
-    p2.set_ylabel('A')
-    # Phase
-    p3 = fig2.add_subplot(122)
-    p3.plot(frq, I_fft_phase, 'r.')
-    # p3.vlines(frq,[0],I_fft_amp)
-    p3.grid(True)
-    p3.set_title('Phase')
-    p3.set_xlabel('Freq')
-    p3.set_ylabel('deg')
-
-    plt.show()
+# Commented out until preproc import loop is solved
+# def plot_signal(s_path, index=-1,noise=False):
+#     label_path = s_path.replace('_val', '_label')
+#     sample_win = int(preproc_config['Fs']*preproc_config['sample_time'])
+#     I = np.loadtxt(s_path)
+#     I_label = np.loadtxt(label_path, delimiter=',')
+#     if index > (len(I)-sample_win-1):
+#         print('index inserted is not valid')
+#         return 1
+#     if index < 0:
+#         index = np.random.randint(0,(len(I)-sample_win-1))
+#     if not('sum' in s_path):
+#         for i in range(index, (len(I)-sample_win-1)):
+#             if I_label[i] == 0:
+#                 continue
+#             else:
+#                 break
+#         index = i
+#     sampled_I = I[index:index+sample_win]
+#     # sampled_label = I_label[index:index+sample_win]
+#     I_fft = preproc.fft(sampled_I,noise=noise)
+#     I_fft_amp, I_fft_phase = preproc.fft_amp_phase(I_fft)
+#
+#     temp=preproc.fft2input(I_fft_amp, I_fft_phase,preproc_config['Fs'])
+#
+#     n = len(sampled_I)                # length of the signal
+#     k = np.arange(n)
+#     T = n/preproc_config['Fs']
+#     frq = k/T
+#     frq = frq[range(int(n/2))]
+#
+#     # Plot Signal
+#     fig1 = plt.figure()
+#     p1 = fig1.add_subplot(111)
+#     p1.plot(range(n), sampled_I, 'b')
+#     p1.set_title('Current Signal')
+#     p1.set_xlabel('time')
+#     p1.set_ylabel('I(A)')
+#
+#     # Plot Amplitudes and Phase
+#     # Amplitude
+#     fig2 = plt.figure()
+#     p2 = fig2.add_subplot(121)
+#     p2.plot(frq, I_fft_amp, 'r.')
+#     p2.vlines(frq,[0],I_fft_amp)
+#     p2.grid(True)
+#     p2.set_title('Amplitude')
+#     p2.set_xlabel('Freq')
+#     p2.set_ylabel('A')
+#     # Phase
+#     p3 = fig2.add_subplot(122)
+#     p3.plot(frq, I_fft_phase, 'r.')
+#     # p3.vlines(frq,[0],I_fft_amp)
+#     p3.grid(True)
+#     p3.set_title('Phase')
+#     p3.set_xlabel('Freq')
+#     p3.set_ylabel('deg')
+#
+#     plt.show()
 
 
 def mat2txt(f_path,out_path):
@@ -232,7 +253,6 @@ def mat2txt(f_path,out_path):
     raw_mat = np.array([raw[i][:, phase_idx] for i in range(len(raw))])
     data = raw_mat.reshape((1,raw_mat.size))
     np.savetxt(out_path, data, fmt='%.7f', delimiter='\n')
-
 
 
 if __name__ == "__main__":
