@@ -8,19 +8,20 @@ from pathlib import Path
 # utilities.plot_signal('measured_loads\\tested\\edited\\signal_sum_val.txt',36000, noise=False)
 
 
-# new_path = 'measured_loads\\tested\\edited\\'
+new_path = 'final_loads\\'
 # utilities.gen_sum_measured()
-# pathlist = Path('measured_loads\\tested').glob('**/*.txt')
-# c = 0
-# for path in pathlist:
-#     if c == 8:
-#         break
-#     path = str(path)
-#     print(path)
-#     I = np.loadtxt(path)
-#     if not '1PH' in path:
-#         I = np.tile(I,10)
-#
+pathlist = Path('measured_loads\\tested').glob('**/*.txt')
+c = 0
+for path in pathlist:
+    if c == 8:
+        break
+    path = str(path)
+    print(path)
+    I = np.loadtxt(path)
+    if not '1PH' in path:
+        I = np.tile(I, 10)
+    np.savetxt(new_path + path.split('\\', 2)[-1], I[:200000], fmt='%.7f', delimiter='\n')
+
 #     on = np.ones(len(I), dtype=int)
 #     i = step = 0
 #     curr = np.random.randint(0, 2)
