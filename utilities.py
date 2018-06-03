@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io as sc
+from preproc import *
+
 
 preproc_config = {
-    'Fs': 6400, #2*650+50,
+    'Fs': 6400,     # 2*650+50,
     'sample_time': 0.1,
     'noise': False,
     'noise_percentage': 0.1,
@@ -15,27 +17,28 @@ nn_config = {
     'input_size': 14,
     'output_size': 5,
     'num_classes': 5,
-    'num_epochs': 200,
+    'num_epochs': 300,
     'batch_size': 30,
-    'learning_rate': 1e-3
+    'learning_rate': 1e-2
 }
 
 loads = {
-    5: 'AC_motor_4_37A_load_DB',
-    6: 'AC_motor_DB',
-    0: 'Air_Conditioner1_int_DB',
-    1: 'Air_Conditioner2_int_DB',
-    7: 'INVERTER_13_1PH_DB',
-    2: 'Lamp_int_DB',
-    3: 'Microwave_int_DB',
-    4: 'Toaster_int_DB'
+    'AC_motor_4_37A_load_DB',
+    'AC_motor_DB',
+    'Air_Conditioner1_int_DB',
+    'Air_Conditioner2_int_DB',
+    'INVERTER_13_1PH_DB',
+    'Lamp_int_DB',
+    'Microwave_int_DB',
+    'Toaster_int_DB'
 }
+
 
 # noinspection PyTypeChecker
 def gen_I(path='', n=1,states=1):
     state_interval = 5
     harmony_n = np.random.randint(2,8)
-    f = np.array([1,3,5,7,9,11,13]) * 50  # frequency space
+    f = np.array([1, 3, 5, 7, 9, 11, 13]) * 50  # frequency space
     F = [None] * states
     P = [None] * states
     A = [None] * states
@@ -181,65 +184,65 @@ def load_sum(folder_name):
 def compare_input(I1,I2):
     return np.sqrt(((I1 - I2)**2).sum())
 
-# Commented out until preproc import loop is solved
-# def plot_signal(s_path, index=-1,noise=False):
-#     label_path = s_path.replace('_val', '_label')
-#     sample_win = int(preproc_config['Fs']*preproc_config['sample_time'])
-#     I = np.loadtxt(s_path)
-#     I_label = np.loadtxt(label_path, delimiter=',')
-#     if index > (len(I)-sample_win-1):
-#         print('index inserted is not valid')
-#         return 1
-#     if index < 0:
-#         index = np.random.randint(0,(len(I)-sample_win-1))
-#     if not('sum' in s_path):
-#         for i in range(index, (len(I)-sample_win-1)):
-#             if I_label[i] == 0:
-#                 continue
-#             else:
-#                 break
-#         index = i
-#     sampled_I = I[index:index+sample_win]
-#     # sampled_label = I_label[index:index+sample_win]
-#     I_fft = preproc.fft(sampled_I,noise=noise)
-#     I_fft_amp, I_fft_phase = preproc.fft_amp_phase(I_fft)
-#
-#     temp=preproc.fft2input(I_fft_amp, I_fft_phase,preproc_config['Fs'])
-#
-#     n = len(sampled_I)                # length of the signal
-#     k = np.arange(n)
-#     T = n/preproc_config['Fs']
-#     frq = k/T
-#     frq = frq[range(int(n/2))]
-#
-#     # Plot Signal
-#     fig1 = plt.figure()
-#     p1 = fig1.add_subplot(111)
-#     p1.plot(range(n), sampled_I, 'b')
-#     p1.set_title('Current Signal')
-#     p1.set_xlabel('time')
-#     p1.set_ylabel('I(A)')
-#
-#     # Plot Amplitudes and Phase
-#     # Amplitude
-#     fig2 = plt.figure()
-#     p2 = fig2.add_subplot(121)
-#     p2.plot(frq, I_fft_amp, 'r.')
-#     p2.vlines(frq,[0],I_fft_amp)
-#     p2.grid(True)
-#     p2.set_title('Amplitude')
-#     p2.set_xlabel('Freq')
-#     p2.set_ylabel('A')
-#     # Phase
-#     p3 = fig2.add_subplot(122)
-#     p3.plot(frq, I_fft_phase, 'r.')
-#     # p3.vlines(frq,[0],I_fft_amp)
-#     p3.grid(True)
-#     p3.set_title('Phase')
-#     p3.set_xlabel('Freq')
-#     p3.set_ylabel('deg')
-#
-#     plt.show()
+
+def plot_signal(s_path, index=-1,noise=False):
+    label_path = s_path.replace('_val', '_label')
+    sample_win = int(preproc_config['Fs']*preproc_config['sample_time'])
+    I = np.loadtxt(s_path)
+    I_label = np.loadtxt(label_path, delimiter=',')
+    if index > (len(I)-sample_win-1):
+        print('index inserted is not valid')
+        return 1
+    if index < 0:
+        index = np.random.randint(0,(len(I)-sample_win-1))
+    if not('sum' in s_path):
+        for i in range(index, (len(I)-sample_win-1)):
+            if I_label[i] == 0:
+                continue
+            else:
+                break
+        index = i
+    sampled_I = I[index:index+sample_win]
+    # sampled_label = I_label[index:index+sample_win]
+    I_fft = fft(sampled_I,noise=noise)
+    I_fft_amp, I_fft_phase = fft_amp_phase(I_fft)
+
+    temp=fft2input(I_fft_amp, I_fft_phase,preproc_config['Fs'])
+
+    n = len(sampled_I)                # length of the signal
+    k = np.arange(n)
+    T = n/preproc_config['Fs']
+    frq = k/T
+    frq = frq[range(int(n/2))]
+
+    # Plot Signal
+    fig1 = plt.figure()
+    p1 = fig1.add_subplot(111)
+    p1.plot(range(n), sampled_I, 'b')
+    p1.set_title('Current Signal')
+    p1.set_xlabel('time')
+    p1.set_ylabel('I(A)')
+
+    # Plot Amplitudes and Phase
+    # Amplitude
+    fig2 = plt.figure()
+    p2 = fig2.add_subplot(121)
+    p2.plot(frq, I_fft_amp, 'r.')
+    p2.vlines(frq, [0], I_fft_amp)
+    p2.grid(True)
+    p2.set_title('Amplitude')
+    p2.set_xlabel('Freq')
+    p2.set_ylabel('A')
+    # Phase
+    p3 = fig2.add_subplot(122)
+    p3.plot(frq, I_fft_phase, 'r.')
+    # p3.vlines(frq,[0],I_fft_amp)
+    p3.grid(True)
+    p3.set_title('Phase')
+    p3.set_xlabel('Freq')
+    p3.set_ylabel('deg')
+
+    plt.show()
 
 
 def mat2txt(f_path,out_path):

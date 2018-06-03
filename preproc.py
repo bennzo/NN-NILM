@@ -1,4 +1,6 @@
 import numpy as np
+import itertools
+import random
 import utilities as util
 import torch.utils.data
 from torch.utils.data.dataset import Dataset
@@ -57,56 +59,77 @@ def data_init_syn(data_dir):
     data_size = raw_data.size
     sig_len = data_size//(2**num_classes)
 
-    train_comb = [
-        0b10000,
-        #0b01000,
-        0b00100,
-        0b00010,
-        0b00001,
-        0b10100,
-        0b10010,
-        0b00011,
-        0b00111,
-        0b10101,
-        0b10111,
-        0b10011
-    ]
+    manual = 0
+    if manual:
+        train_comb = [
+            0b10000,
+            0b01000,
+            0b00100,
+            #0b00010,
+            0b00001,
+            # 0b10100,
+             0b10010,
+            # 0b00011,
+            # 0b00111,
+            # 0b10101,
+            # 0b10111,
+            # 0b10011,
+            # 0b11111,
+            # 0b10101,
+            # 0b11011
+        ]
+        test_comb = [
+             0b10000,
+             0b01100,
+           # 0b00100,
+          #  0b00010,
+             0b11000,
+             0b10100,
+      #      0b00111
+        ]
+    else:
+        train_perm = 32
+        test_perm = 12
+        train_comb = ['0b' + s for s in ["".join(seq) for seq in itertools.product("01", repeat=5)]]
+        random.shuffle(train_comb)
+        test_comb = ['0b' + s for s in ["".join(seq) for seq in itertools.product("01", repeat=5)]]
+        random.shuffle(test_comb)
+        for _ in range(32 - train_perm):
+            train_comb.pop()
+        for _ in range(32 - test_perm):
+            test_comb.pop()
 
-    test_comb = [
-        0b10000,
-        #0b01000,
-        0b00100,
-        0b00010,
-        0b00001,
-    ]
-
-    raw_train_data  = np.array([], dtype=float)
+    raw_train_data = np.array([], dtype=float)
     raw_train_label = np.array([]).reshape((0,num_classes))
-    raw_test_data   = np.array([], dtype=float)
-    raw_test_label  = np.array([]).reshape((0,num_classes))
+    raw_test_data = np.array([], dtype=float)
+    raw_test_label = np.array([]).reshape((0,num_classes))
 
     for comb in train_comb:
-        raw_train_data  = np.concatenate((raw_train_data, raw_data[comb*sig_len:(1 + comb)*sig_len]))
+        if not manual:
+            comb = int(comb, 2)
+        raw_train_data = np.concatenate((raw_train_data, raw_data[comb*sig_len:(1 + comb)*sig_len]))
         raw_train_label = np.vstack((raw_train_label, raw_labels[comb*sig_len:(1 + comb)*sig_len]))
     train_data_unscaled, train_labels = data2input(raw_train_data, raw_train_label)
 
     # ------------- Predefined test -------------- #
-    # for comb in test_comb:
-    #     raw_test_data   = np.concatenate((raw_test_data, raw_data[comb*sig_len:(1 + comb)*sig_len]))
-    #     raw_test_label  = np.vstack((raw_test_label, raw_labels[comb*sig_len:(1 + comb)*sig_len]))
-    # test_data_unscaled, test_labels   = data2input(raw_test_data, raw_test_label)
+    for comb in test_comb:
+        if not manual:
+            comb = int(comb, 2)
+        raw_test_data = np.concatenate((raw_test_data, raw_data[comb*sig_len:(1 + int(comb))*sig_len]))
+        raw_test_label = np.vstack((raw_test_label, raw_labels[comb*sig_len:(1 + comb)*sig_len]))
+    test_data_unscaled, test_labels   = data2input(raw_test_data, raw_test_label)
     # -------------------------------------------- #
 
     # ------------- Holdout Validation test ------------- #
-    n = train_data_unscaled.shape[0]
-    shuffle_idx = np.random.RandomState(0).permutation(np.array(range(0,n)))
-    train_idx = shuffle_idx[0:int(n*util.preproc_config['train_test_ratio'])]
-    test_idx = shuffle_idx[int(n*util.preproc_config['train_test_ratio']):n]
-
-    test_data_unscaled = train_data_unscaled[test_idx].astype(float)
-    test_labels = train_labels[test_idx]
-    train_data_unscaled = train_data_unscaled[train_idx].astype(float)
-    train_labels = train_labels[train_idx]
+    # n = train_data_unscaled.shape[0]
+    # shuffle_idx = np.random.RandomState(0).permutation(np.array(range(0,n)))
+    # train_idx = shuffle_idx[0:int(n*util.preproc_config['train_test_ratio'])]
+    # test_idx = shuffle_idx[int(n*util.preproc_config['train_test_ratio']):n]
+    #
+    # test_data_unscaled = train_data_unscaled[test_idx].astype(float)
+    # test_labels = train_labels[test_idx]
+    # train_data_unscaled = train_data_unscaled[train_idx].astype(float)
+    # train_labels = train_labels[train_idx]
     # --------------------------------------------------- #
 
     return train_data_unscaled, train_labels, test_data_unscaled, test_labels

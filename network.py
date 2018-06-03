@@ -13,19 +13,20 @@ import matplotlib.pyplot as plt
 
 data_folder = 'data/real_world/'
 
+
 # Neural Network Model
 class Net(nn.Module):
     def __init__(self, input_size, num_classes):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(input_size, 50)
         self.fc2 = nn.Linear(50, 50)
-        #self.fc3 = nn.Linear(50, 50)
+        self.fc3 = nn.Linear(50, 50)
         self.fc4 = nn.Linear(50, num_classes)
 
     def forward(self, x):
         out = nn.functional.relu(self.fc1(x))
         out = nn.functional.relu(self.fc2(out))
-        #out = nn.functional.relu(self.fc3(out))
+        out = nn.functional.relu(self.fc3(out))
         out = nn.functional.sigmoid(self.fc4(out))
         return out
 
@@ -49,7 +50,8 @@ net = Net(util.nn_config['input_size'], util.nn_config['num_classes'])
 
 # Loss and Optimizer
 criterion = nn.BCELoss()
-optimizer = torch.optim.SGD(net.parameters(), lr=util.nn_config['learning_rate'], momentum=0.7)
+# criterion = nn.MultiLabelMarginLoss()
+optimizer = torch.optim.SGD(net.parameters(), lr=util.nn_config['learning_rate'], momentum=0.9)
 
 train_accuracy_1 = np.zeros(util.nn_config['num_epochs'])
 # Train the Model
