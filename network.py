@@ -7,32 +7,37 @@ from torch.autograd import Variable
 import numpy as np
 import sklearn.preprocessing
 import utilities as util
+import data
 import preproc
 import matplotlib.pyplot as plt
 
 
-data_folder = 'data/real_world/'
+data_folder = 'data/real_world_new/'
 
 
 # Neural Network Model
 class Net(nn.Module):
     def __init__(self, input_size, num_classes):
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(input_size, 50)
-        self.fc2 = nn.Linear(50, 50)
-        self.fc3 = nn.Linear(50, 50)
-        self.fc4 = nn.Linear(50, num_classes)
+        self.fc1 = nn.Linear(input_size, 128)
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, 32)
+        self.fc4 = nn.Linear(32, 64)
+        self.fc5 = nn.Linear(64, 128)
+        self.fc6 = nn.Linear(128, num_classes)
 
     def forward(self, x):
         out = nn.functional.relu(self.fc1(x))
         out = nn.functional.relu(self.fc2(out))
         out = nn.functional.relu(self.fc3(out))
-        out = nn.functional.sigmoid(self.fc4(out))
+        out = nn.functional.relu(self.fc4(out))
+        out = nn.functional.relu(self.fc5(out))
+        out = nn.functional.sigmoid(self.fc6(out))
         return out
 
 
 # Build data arrays
-train_data, train_labels, test_data, test_labels = preproc.data_init_syn(data_folder)
+train_data, train_labels, test_data, test_labels = data.data_init_measured(data_folder)
 
 # Scale data
 # train_data = sklearn.preprocessing.scale(train_data, axis=0, with_std=False)

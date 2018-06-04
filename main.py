@@ -5,7 +5,7 @@ import preproc
 from pathlib import Path
 
 # ----- Ben testing ----- #
-#utilities.gen_sum_measured_syn('data/real_world/')
+#utilities.gen_sum_measured_syn('final_loads\\')
 #-------------------------#
 
 # load='power_thyristor_DB.txt'

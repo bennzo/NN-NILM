@@ -17,21 +17,21 @@ nn_config = {
     'input_size': 14,
     'output_size': 5,
     'num_classes': 5,
-    'num_epochs': 300,
+    'num_epochs': 100,
     'batch_size': 30,
-    'learning_rate': 1e-2
+    'learning_rate': 1e-3
 }
 
-loads = {
-    'AC_motor_4_37A_load_DB',
-    'AC_motor_DB',
+loads = [
     'Air_Conditioner1_int_DB',
-    'Air_Conditioner2_int_DB',
-    'INVERTER_13_1PH_DB',
-    'Lamp_int_DB',
     'Microwave_int_DB',
-    'Toaster_int_DB'
-}
+    'Toaster_int_DB',
+    'Lamp_int_DB',
+    'AC_motor_DB',
+    'INVERTER_13_1PH_DB',
+    'AC_motor_4_37A_load_DB',
+    'Air_Conditioner2_int_DB'
+]
 
 
 # noinspection PyTypeChecker
