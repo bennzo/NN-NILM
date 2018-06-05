@@ -8,12 +8,8 @@ import numpy as np
 import sklearn.preprocessing
 import utilities as util
 import data
-import preproc
-import matplotlib.pyplot as plt
 
-
-data_folder = 'data/real_world_new/'
-
+final_model = None
 
 # Neural Network Model
 class Net(nn.Module):
@@ -35,77 +31,78 @@ class Net(nn.Module):
         out = nn.functional.sigmoid(self.fc6(out))
         return out
 
+def train(data_folder, data_init_func):
+    # Build data arrays
+    train_data, train_labels, test_data, test_labels = data_init_func(data_folder)
 
-# Build data arrays
-train_data, train_labels, test_data, test_labels = data.data_init_measured(data_folder)
+    # Scale data
+    # train_data = sklearn.preprocessing.scale(train_data, axis=0, with_std=False)
+    # test_data = sklearn.preprocessing.scale(test_data, axis=0, with_std=False)
 
-# Scale data
-# train_data = sklearn.preprocessing.scale(train_data, axis=0, with_std=False)
-# test_data = sklearn.preprocessing.scale(test_data, axis=0, with_std=False)
+    # Pytorch datasets
+    train_dataset = data_utils.TensorDataset(torch.from_numpy(train_data).float(), torch.from_numpy(train_labels).float())
+    test_dataset = data_utils.TensorDataset(torch.from_numpy(test_data).float(), torch.from_numpy(test_labels).float())
 
-# Pytorch datasets
-train_dataset = data_utils.TensorDataset(torch.from_numpy(train_data).float(), torch.from_numpy(train_labels).float())
-test_dataset = data_utils.TensorDataset(torch.from_numpy(test_data).float(), torch.from_numpy(test_labels).float())
+    train_loader = data_utils.DataLoader(train_dataset, batch_size=util.nn_config['batch_size'], shuffle=False)
+    test_loader = data_utils.DataLoader(test_dataset, batch_size=util.nn_config['batch_size'], shuffle=False)
 
-train_loader = data_utils.DataLoader(train_dataset, batch_size=util.nn_config['batch_size'], shuffle=True)
-test_loader = data_utils.DataLoader(test_dataset, batch_size=util.nn_config['batch_size'], shuffle=True)
+    print("Initializing NN")
+    net = Net(util.nn_config['input_size'], util.nn_config['num_classes'])
 
-print("Initializing NN")
-net = Net(util.nn_config['input_size'], util.nn_config['num_classes'])
+    # Loss and Optimizer
+    criterion = nn.BCELoss()
+    #criterion = nn.MultiLabelMarginLoss()
+    optimizer = torch.optim.SGD(net.parameters(), lr=util.nn_config['learning_rate'], momentum=0.9)
 
-# Loss and Optimizer
-criterion = nn.BCELoss()
-# criterion = nn.MultiLabelMarginLoss()
-optimizer = torch.optim.SGD(net.parameters(), lr=util.nn_config['learning_rate'], momentum=0.9)
+    train_accuracy_1 = np.zeros(util.nn_config['num_epochs'])
+    # Train the Model
+    for epoch in range(util.nn_config['num_epochs']):
+        for i, (signals, appliances) in enumerate(train_loader):
+            # Convert torch tensor to Variable
+            signals = Variable(signals)
+            appliances = Variable(appliances)
 
-train_accuracy_1 = np.zeros(util.nn_config['num_epochs'])
-# Train the Model
-for epoch in range(util.nn_config['num_epochs']):
-    for i, (signals, appliances) in enumerate(train_loader):
-        # Convert torch tensor to Variable
-        signals = Variable(signals)
-        appliances = Variable(appliances)
+            # zero the parameter gradients
+            optimizer.zero_grad()
 
-        # zero the parameter gradients
-        optimizer.zero_grad()
+            # forward + backward + optimize
+            outputs = net(signals)
+            loss = criterion(outputs, appliances)
+            loss.backward()
+            optimizer.step()
+        # print loss at the end of each batch
+        correct = 0
+        total = 0
+        for signals, appliances in train_loader:
+            signals = Variable(signals)
+            appliances = Variable(appliances)
+            outputs = net(signals)
+            total += appliances.size(0)
+            correct += np.sum(np.all(appliances.data == torch.round(outputs.data), axis = 1))
+        train_accuracy_1[epoch] = correct / total
+        print('Accuracy of the network on the training set after the {0} epoch: {1:.2f} %'.format(epoch + 1, 100 * correct / total))
 
-        # forward + backward + optimize
-        outputs = net(signals)
-        loss = criterion(outputs, appliances)
-        loss.backward()
-        optimizer.step()
-    # print loss at the end of each batch
+    # Test the Model
     correct = 0
     total = 0
-    for signals, appliances in train_loader:
+    for signals, appliances in test_loader:
         signals = Variable(signals)
-        appliances = Variable(appliances)
         outputs = net(signals)
         total += appliances.size(0)
-        correct += np.sum(np.all(appliances.data == torch.round(outputs.data), axis = 1))
-    train_accuracy_1[epoch] = correct / total
-    print('Accuracy of the network on the training set after the {0} epoch: {1:.2f} %'.format(epoch + 1, 100 * correct / total))
+        correct += np.sum(np.all(appliances == torch.round(outputs.data), axis=1))
 
-# Test the Model
-correct = 0
-total = 0
-for signals, appliances in test_loader:
-    signals = Variable(signals)
-    outputs = net(signals)
-    total += appliances.size(0)
-    correct += np.sum(np.all(appliances == torch.round(outputs.data), axis=1))
+    test_exact_match = 100 * correct / total
+    print('Accuracy of the network on the test set: {0:.2f} %'.format(test_exact_match))
 
-print('Accuracy of the network on the test set: {0:.2f} %'.format(100 * correct / total))
+    # Save the Model
+    torch.save(net, 'model.pkl')
+    final_model = net
 
+    return test_exact_match
 
-# Save the Model
-#torch.save(net.state_dict(), 'model_1.pkl')
+def disaggregate(signal):
+    model = torch.load('model.pkl')
+    input = data.signal2input(signal)
+    output = model(Variable(torch.from_numpy(input).float()))
+    print(output.data.numpy().round().astype(int))
 
-# fig1 = plt.figure()
-# p1 = fig1.add_subplot(111)
-# p1.plot(range(0,110,10), noise_acc, 'b')
-# p1.grid(True)
-# p1.set_title('Accuracy for noise')
-# p1.set_xlabel('Noise Percentage')
-# p1.set_ylabel('Accuracy')
-# plt.show()

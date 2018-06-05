@@ -3,13 +3,17 @@ import matplotlib.pyplot as plt
 import scipy.io as sc
 from preproc import *
 
+config = {
+    'data_folder': 'data/real_world_new/'
+}
 
 preproc_config = {
-    'Fs': 6400,     # 2*650+50,
+    'Fs': 6400,                 # Measured loads frequency
+    #'Fs': 2*650+50,              # Generated loads frequency
     'sample_time': 0.1,
     'noise': False,
     'noise_percentage': 0.1,
-    'train_test_ratio': 0.6,
+    'train_test_ratio': 0.8,
     'threshold': 1
 }
 
@@ -35,7 +39,7 @@ loads = [
 
 
 # noinspection PyTypeChecker
-def gen_I(path='', n=1,states=1):
+def gen_I(path, n=1, states=1):
     state_interval = 5
     harmony_n = np.random.randint(2,8)
     f = np.array([1, 3, 5, 7, 9, 11, 13]) * 50  # frequency space
@@ -52,7 +56,7 @@ def gen_I(path='', n=1,states=1):
     # ------ Generate Signal ------ #
     Fs = preproc_config['Fs']                                                                 # sampling rate
     Ts = 1.0 / Fs                                                                             # sampling interval
-    T_fin = 20                                                                               # total time
+    T_fin = 100                                                                                  # total time
     t = np.arange(0, T_fin, Ts)                                                               # time vector
     I_t_pre = [None]*states
 
@@ -66,7 +70,7 @@ def gen_I(path='', n=1,states=1):
         state = np.random.randint(0, states)
         I_t = np.concatenate((I_t, (I_t_pre[state])[i:i+step]))
 
-
+    on = np.ones((T_fin * Fs), dtype=int)
     # ------ Determine on/off ------ #
     #on = np.sort(np.random.choice(T_fin*Fs-1, 16, replace=False))
     # label = np.ones((T_fin*Fs))
@@ -75,21 +79,20 @@ def gen_I(path='', n=1,states=1):
     #     label[on[i]:on[i+1]] = 0
 
     # ------ Old labeling ------ #
-    # for i in range(0, (T_fin*Fs), int(T_fin*Fs/(2**n))*2):
-    #     on[i:i+int(T_fin*Fs/(2**n))] = 0
-    # label = on
+    for i in range(0, (T_fin*Fs), int(T_fin*Fs/(2**n))*2):
+        on[i:i+int(T_fin*Fs/(2**n))] = 0
+    label = on
 
 
     # ------ Labeling data ------ #
-    on = np.ones((T_fin*Fs), dtype=int)
-    i = step = 0
-    curr = np.random.randint(0, 2)
-    samples = T_fin*Fs
-    while i < samples:
-        step = np.random.randint(samples // 16, samples // 3)
-        on[i:i + step] = int(curr)
-        curr = not curr           # toggle
-        i += step           # step increment
+    # i = step = 0
+    # curr = np.random.randint(0, 2)
+    # samples = T_fin*Fs
+    # while i < samples:
+    #     step = np.random.randint(samples // 16, samples // 3)
+    #     on[i:i + step] = int(curr)
+    #     curr = not curr           # toggle
+    #     i += step           # step increment
 
     label = on
     I_t = I_t*on
@@ -98,10 +101,11 @@ def gen_I(path='', n=1,states=1):
     return I_t, label
 
 
-def gen_sum(path='', n=nn_config['num_classes']):
+def gen_sum(path, n):
     S_sum, label_sum = gen_I(path)
     for i in range(2, n+1):
-        states = np.random.randint(1, 5)
+        #states = np.random.randint(1, 5)
+        states = 1
         temp_sum, temp_label = gen_I(path, n=i, states=states)
         S_sum += temp_sum
         label_sum = np.vstack((label_sum,temp_label))
@@ -111,7 +115,7 @@ def gen_sum(path='', n=nn_config['num_classes']):
 
 
 # TODO - make the sum choose different loads each run..
-def gen_sum_measured(path='measured_loads\\tested\\edited\\'):
+def gen_sum_measured(path):
     lst='Signal made from the following loads:\n'+loads[0]+'\n'
     I_sum = np.loadtxt(path+'val_'+loads[0]+'.txt')
     label_sum = np.loadtxt(path + 'label_' + loads[0] + '.txt')
@@ -185,11 +189,12 @@ def compare_input(I1,I2):
     return np.sqrt(((I1 - I2)**2).sum())
 
 
-def plot_signal(s_path, index=-1,noise=False):
+def plot_signal(s_path, index=-1):
     label_path = s_path.replace('_val', '_label')
     sample_win = int(preproc_config['Fs']*preproc_config['sample_time'])
     I = np.loadtxt(s_path)
     I_label = np.loadtxt(label_path, delimiter=',')
+
     if index > (len(I)-sample_win-1):
         print('index inserted is not valid')
         return 1
@@ -197,17 +202,18 @@ def plot_signal(s_path, index=-1,noise=False):
         index = np.random.randint(0,(len(I)-sample_win-1))
     if not('sum' in s_path):
         for i in range(index, (len(I)-sample_win-1)):
-            if I_label[i] == 0:
-                continue
-            else:
+            if I_label[i] == 1:
+                index = i
                 break
-        index = i
+
     sampled_I = I[index:index+sample_win]
+
     # sampled_label = I_label[index:index+sample_win]
-    I_fft = fft(sampled_I,noise=noise)
+
+    I_fft = fft(sampled_I,noise=preproc_config['noise'])
     I_fft_amp, I_fft_phase = fft_amp_phase(I_fft)
 
-    temp=fft2input(I_fft_amp, I_fft_phase,preproc_config['Fs'])
+    #temp = fft2input(I_fft_amp, I_fft_phase,preproc_config['Fs'])
 
     n = len(sampled_I)                # length of the signal
     k = np.arange(n)
@@ -219,9 +225,9 @@ def plot_signal(s_path, index=-1,noise=False):
     fig1 = plt.figure()
     p1 = fig1.add_subplot(111)
     p1.plot(range(n), sampled_I, 'b')
-    p1.set_title('Current Signal')
-    p1.set_xlabel('time')
-    p1.set_ylabel('I(A)')
+    p1.set_title('Generated Sum signal')
+    p1.set_xlabel('Time')
+    p1.set_ylabel('I[A]')
 
     # Plot Amplitudes and Phase
     # Amplitude
@@ -230,17 +236,55 @@ def plot_signal(s_path, index=-1,noise=False):
     p2.plot(frq, I_fft_amp, 'r.')
     p2.vlines(frq, [0], I_fft_amp)
     p2.grid(True)
-    p2.set_title('Amplitude')
-    p2.set_xlabel('Freq')
-    p2.set_ylabel('A')
+    p2.set_title('Amplitudes by frequency of Sum signal')
+    p2.set_xlabel('Frequency[Hz]')
+    p2.set_ylabel('|A|')
     # Phase
     p3 = fig2.add_subplot(122)
     p3.plot(frq, I_fft_phase, 'r.')
     # p3.vlines(frq,[0],I_fft_amp)
     p3.grid(True)
-    p3.set_title('Phase')
-    p3.set_xlabel('Freq')
-    p3.set_ylabel('deg')
+    p3.set_title('Phase by frequency of Sum signal')
+    p3.set_xlabel('Frequency[Hz]')
+    p3.set_ylabel('Degree[$^\circ$]')
+
+    plt.show()
+
+def plot_signal_gui(sampled_I):
+    I_fft = fft(sampled_I,noise=preproc_config['noise'])
+    I_fft_amp, I_fft_phase = fft_amp_phase(I_fft)
+
+    n = len(sampled_I)                # length of the signal
+    k = np.arange(n)
+    T = n/preproc_config['Fs']
+    frq = k/T
+    frq = frq[range(int(n/2))]
+
+    # Plot Signal
+    fig1 = plt.figure()
+    p1 = fig1.add_subplot(131)
+    p1.plot(range(n), sampled_I, 'b')
+    p1.set_title('Signal')
+    p1.set_xlabel('Time')
+    p1.set_ylabel('I[A]')
+
+    # Plot Amplitudes and Phase
+    # Amplitude
+    p2 = fig1.add_subplot(132)
+    p2.plot(frq, I_fft_amp, 'r.')
+    p2.vlines(frq, [0], I_fft_amp)
+    p2.grid(True)
+    p2.set_title('Amplitudes by frequency of signal')
+    p2.set_xlabel('Frequency[Hz]')
+    p2.set_ylabel('|A|')
+    # Phase
+    p3 = fig1.add_subplot(133)
+    p3.plot(frq, I_fft_phase, 'r.')
+    # p3.vlines(frq,[0],I_fft_amp)
+    p3.grid(True)
+    p3.set_title('Phase by frequency of signal')
+    p3.set_xlabel('Frequency[Hz]')
+    p3.set_ylabel('Degree[$^\circ$]')
 
     plt.show()
 

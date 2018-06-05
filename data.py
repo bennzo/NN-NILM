@@ -4,6 +4,34 @@ import random
 import utilities as util
 import preproc as pp
 
+train_comb_default = [
+                0b10000,
+                0b01000,
+                0b00100,
+                0b00010,
+                0b00001,
+                0b10100,
+                0b10010,
+                0b00011,
+                0b00111,
+                0b10101,
+                0b10111,
+                0b10011,
+                0b11111,
+                0b10101,
+                0b11011
+            ]
+test_comb_default = [
+             0b10000,
+             0b01100,
+            #0b00100,
+            #0b00010,
+             0b11000,
+             0b10100,
+            #0b00111
+            ]
+
+
 # Data initialization for simulated signals
 # the output is a composition of signal summarization across all on/off combinations
 def data_init_simulated(data_dir):
@@ -53,42 +81,15 @@ def data_init_simulated(data_dir):
 
 # Data initialization for measured inputs
 # the output is a composition of signal summarization across predefined on/off combinations
-def data_init_comb(data_dir):
+def data_init_comb(data_dir, train_comb=train_comb_default, test_comb=test_comb_default):
     raw_data, raw_labels = util.load_sum(data_dir)
 
     num_classes = util.nn_config['num_classes']
     data_size = raw_data.size
     sig_len = data_size//(2**num_classes)
 
-    manual = 1
-    if manual:
-        train_comb = [
-            0b10000,
-            0b01000,
-            0b00100,
-            0b00010,
-            0b00001,
-            0b10100,
-            0b10010,
-            0b00011,
-            0b00111,
-            0b10101,
-            0b10111,
-            0b10011,
-            0b11111,
-            0b10101,
-            0b11011
-        ]
-        test_comb = [
-             0b10000,
-             0b01100,
-           # 0b00100,
-          #  0b00010,
-             0b11000,
-             0b10100,
-      #      0b00111
-        ]
-    else:
+    manual = True
+    if not manual:
         train_perm = 32
         test_perm = 12
         train_comb = ['0b' + s for s in ["".join(seq) for seq in itertools.product("01", repeat=5)]]
@@ -106,7 +107,7 @@ def data_init_comb(data_dir):
     raw_test_label = np.array([]).reshape((0,num_classes))
 
     for comb in train_comb:
-        if not manual:
+        if manual:
             comb = int(comb, 2)
         raw_train_data = np.concatenate((raw_train_data, raw_data[comb*sig_len:(1 + comb)*sig_len]))
         raw_train_label = np.vstack((raw_train_label, raw_labels[comb*sig_len:(1 + comb)*sig_len]))
@@ -116,7 +117,7 @@ def data_init_comb(data_dir):
     # for comb in test_comb:
     #     if not manual:
     #         comb = int(comb, 2)
-    #     raw_test_data = np.concatenate((raw_test_data, raw_data[comb*sig_len:(1 + int(comb))*sig_len]))
+    #     raw_test_data = np.concatenate((raw_test_data, raw_data[comb*sig_len:(1 + comb)*sig_len]))
     #     raw_test_label = np.vstack((raw_test_label, raw_labels[comb*sig_len:(1 + comb)*sig_len]))
     # test_data_unscaled, test_labels   = data2input(raw_test_data, raw_test_label)
     # -------------------------------------------- #
@@ -185,3 +186,9 @@ def data2input(raw_data,raw_labels):
             data = np.vstack((data, pp.fft2input(I_fft_amp, I_fft_phase, Fs)))
             labels = np.vstack((labels, label))
     return data,labels
+
+def signal2input(signal):
+    I_fft = pp.fft(signal, util.preproc_config['noise'])
+    I_fft_amp, I_fft_phase = pp.fft_amp_phase(I_fft)
+    input = pp.fft2input(I_fft_amp, I_fft_phase, util.preproc_config['Fs'])
+    return input

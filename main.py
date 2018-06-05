@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import utilities
 import preproc
+import network
+import data
 from pathlib import Path
 
 # ----- Ben testing ----- #
@@ -63,3 +65,39 @@ from pathlib import Path
 # p4.set_title('NN Input - Noise 50%')
 #
 # plt.show()
+
+# --------------------- Noise Plot ------------------ #
+# noise_acc = np.zeros(11)
+# for i in range(11):
+#     utilities.preproc_config['noise_percentage'] = i/10
+#     noise_acc[i] = network.train('data//lab-noise//')
+# fig1 = plt.figure()
+# p1 = fig1.add_subplot(111)
+# p1.plot(range(0,110,10), noise_acc, 'b')
+# p1.grid(True)
+# p1.set_title('Exact Match Accuracy vs Noise')
+# p1.set_xlabel('Noise Percentage')
+# p1.set_ylabel('Accuracy')
+# plt.show()
+
+# --------------------- Num of Loads Plot ------------------ #
+# loads_acc = np.zeros(9)
+# for i in range(2,11):
+#     path = 'data//plot//'  + str(i) + '//'
+#     utilities.nn_config['num_classes'] = i
+#     utilities.gen_sum(path, i)
+#     loads_acc[i-2] = network.train(path)
+# fig1 = plt.figure()
+# p1 = fig1.add_subplot(111)
+# p1.plot(range(2,11), loads_acc, 'b')
+# p1.grid(True)
+# p1.set_title('Exact Match Accuracy vs Number of Loads')
+# p1.set_xlabel('No. Loads')
+# p1.set_ylabel('Accuracy')
+# plt.show()
+
+
+# Signal Plotting for book
+#utilities.plot_signal('data//lab-noise//signal_sum_val.txt', index=0)
+
+#network.train('data/real_world_new/', data.data_init_comb)
