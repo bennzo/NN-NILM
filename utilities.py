@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io as sc
+import pandas as pd
 from preproc import *
 
 config = {
@@ -21,7 +22,7 @@ nn_config = {
     'input_size': 14,
     'output_size': 5,
     'num_classes': 5,
-    'num_epochs': 100,
+    'num_epochs': 50,
     'batch_size': 30,
     'learning_rate': 1e-3
 }
@@ -113,8 +114,7 @@ def gen_sum(path, n):
     np.savetxt(path+"signal_sum_val.txt", S_sum, fmt='%.7f', delimiter='\n')
     np.savetxt(path+"signal_sum_label.txt", np.transpose(label_sum), fmt='%i', delimiter=',')
 
-
-# TODO - make the sum choose different loads each run..
+# TODO: Change loadtxt to panda's read_csv
 def gen_sum_measured(path):
     lst='Signal made from the following loads:\n'+loads[0]+'\n'
     I_sum = np.loadtxt(path+'val_'+loads[0]+'.txt')
@@ -180,8 +180,10 @@ def load_signal(i, folder_name):
 
 
 def load_sum(folder_name):
-    I = np.loadtxt(folder_name + "signal_sum_val.txt")
-    I_label = np.loadtxt(folder_name + "signal_sum_label.txt", delimiter=',')
+    # I = np.loadtxt(folder_name + "signal_sum_val.txt")
+    # I_label = np.loadtxt(folder_name + "signal_sum_label.txt", delimiter=',')
+    I = pd.read_csv(folder_name + "signal_sum_val.txt", header=None).values.flatten()
+    I_label = pd.read_csv(folder_name + "signal_sum_label.txt", sep=',', header=None).values
     return I, I_label
 
 
@@ -192,8 +194,10 @@ def compare_input(I1,I2):
 def plot_signal(s_path, index=-1):
     label_path = s_path.replace('_val', '_label')
     sample_win = int(preproc_config['Fs']*preproc_config['sample_time'])
-    I = np.loadtxt(s_path)
-    I_label = np.loadtxt(label_path, delimiter=',')
+    # I = np.loadtxt(s_path)
+    # I_label = np.loadtxt(label_path, delimiter=',')
+    I = pd.read_csv(s_path, header=None).values.flatten()
+    I_label = pd.read_csv(label_path, sep=',', header=None).values
 
     if index > (len(I)-sample_win-1):
         print('index inserted is not valid')
@@ -207,8 +211,8 @@ def plot_signal(s_path, index=-1):
                 break
 
     sampled_I = I[index:index+sample_win]
-
-    # sampled_label = I_label[index:index+sample_win]
+    #sampled_I = I[16876:16930]
+    #sampled_label = I_label[index:index+sample_win]
 
     I_fft = fft(sampled_I,noise=preproc_config['noise'])
     I_fft_amp, I_fft_phase = fft_amp_phase(I_fft)
@@ -236,7 +240,7 @@ def plot_signal(s_path, index=-1):
     p2.plot(frq, I_fft_amp, 'r.')
     p2.vlines(frq, [0], I_fft_amp)
     p2.grid(True)
-    p2.set_title('Amplitudes by frequency of Sum signal')
+    p2.set_title('Amplitudes by frequency of current signal - Noise 50%')
     p2.set_xlabel('Frequency[Hz]')
     p2.set_ylabel('|A|')
     # Phase
@@ -244,7 +248,7 @@ def plot_signal(s_path, index=-1):
     p3.plot(frq, I_fft_phase, 'r.')
     # p3.vlines(frq,[0],I_fft_amp)
     p3.grid(True)
-    p3.set_title('Phase by frequency of Sum signal')
+    p3.set_title('Phase by frequency of current signal - Noise 50%')
     p3.set_xlabel('Frequency[Hz]')
     p3.set_ylabel('Degree[$^\circ$]')
 

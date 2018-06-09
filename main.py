@@ -98,6 +98,19 @@ from pathlib import Path
 
 
 # Signal Plotting for book
-#utilities.plot_signal('data//lab-noise//signal_sum_val.txt', index=0)
+#utilities.plot_signal('data\lab-noise\signal_4_val.txt', index=0)
 
-#network.train('data/real_world_new/', data.data_init_comb)
+#network.train('data\\real_world_new\\', data.data_init_comb)
+
+# Plot Accuracy for 4,8,16,32 permutations against test permutations
+
+#network.train('data\\real_world_new\\', lambda path: data.data_init_comb_test(path, train_perm=32, test_perm=2))
+
+if (True):
+    models = ['32','16','8','4']
+    accs = np.zeros((4,28))
+    for i in range(0,28):
+        test_data_unscaled, test_labels = data.data_init_for_plot('data\\real_world_new\\', i+4)
+        for j in range(4):
+            accs[j,i] = network.train_plot(test_data_unscaled,test_labels,'model'+str(models[j])+'.pkl')
+    np.savetxt('stats.txt',accs, fmt='%.7f')

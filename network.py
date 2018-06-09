@@ -9,7 +9,6 @@ import sklearn.preprocessing
 import utilities as util
 import data
 
-final_model = None
 
 # Neural Network Model
 class Net(nn.Module):
@@ -43,8 +42,8 @@ def train(data_folder, data_init_func):
     train_dataset = data_utils.TensorDataset(torch.from_numpy(train_data).float(), torch.from_numpy(train_labels).float())
     test_dataset = data_utils.TensorDataset(torch.from_numpy(test_data).float(), torch.from_numpy(test_labels).float())
 
-    train_loader = data_utils.DataLoader(train_dataset, batch_size=util.nn_config['batch_size'], shuffle=False)
-    test_loader = data_utils.DataLoader(test_dataset, batch_size=util.nn_config['batch_size'], shuffle=False)
+    train_loader = data_utils.DataLoader(train_dataset, batch_size=util.nn_config['batch_size'], shuffle=True)
+    test_loader = data_utils.DataLoader(test_dataset, batch_size=util.nn_config['batch_size'], shuffle=True)
 
     print("Initializing NN")
     net = Net(util.nn_config['input_size'], util.nn_config['num_classes'])
@@ -52,7 +51,8 @@ def train(data_folder, data_init_func):
     # Loss and Optimizer
     criterion = nn.BCELoss()
     #criterion = nn.MultiLabelMarginLoss()
-    optimizer = torch.optim.SGD(net.parameters(), lr=util.nn_config['learning_rate'], momentum=0.9)
+    #optimizer = torch.optim.SGD(net.parameters(), lr=util.nn_config['learning_rate'], momentum=0.9)
+    optimizer = torch.optim.Adam(net.parameters(), lr=0.0001)
 
     train_accuracy_1 = np.zeros(util.nn_config['num_epochs'])
     # Train the Model
@@ -85,24 +85,62 @@ def train(data_folder, data_init_func):
     # Test the Model
     correct = 0
     total = 0
+    hamming_dist = 0
     for signals, appliances in test_loader:
         signals = Variable(signals)
         outputs = net(signals)
         total += appliances.size(0)
+        hamming_dist += np.count_nonzero(appliances == torch.round(outputs.data))/util.nn_config['num_classes']
         correct += np.sum(np.all(appliances == torch.round(outputs.data), axis=1))
 
+    test_hamming_loss = 100 * hamming_dist / total
     test_exact_match = 100 * correct / total
-    print('Accuracy of the network on the test set: {0:.2f} %'.format(test_exact_match))
+    print('Exact Match Accuracy of the network on the test set: {0:.2f} %'.format(test_exact_match))
+    print('Hamming Accuracy of the network on the test set: {0:.2f} %'.format(test_hamming_loss))
 
     # Save the Model
-    torch.save(net, 'model.pkl')
-    final_model = net
+    torch.save(net.state_dict(), 'model.pkl')
 
     return test_exact_match
 
 def disaggregate(signal):
-    model = torch.load('model.pkl')
+    model = Net(util.nn_config['input_size'], util.nn_config['num_classes'])
+    model.load_state_dict(torch.load('model.pkl'))
+    model.eval()
+
     input = data.signal2input(signal)
     output = model(Variable(torch.from_numpy(input).float()))
     print(output.data.numpy().round().astype(int))
 
+def train_plot(test_data, test_labels, model_path):
+    net = Net(util.nn_config['input_size'], util.nn_config['num_classes'])
+    net.load_state_dict(torch.load(model_path))
+    net.eval()
+
+    test_dataset = data_utils.TensorDataset(torch.from_numpy(test_data).float(), torch.from_numpy(test_labels).float())
+    test_loader = data_utils.DataLoader(test_dataset, batch_size=util.nn_config['batch_size'], shuffle=True)
+
+    correct = 0
+    total = 0
+    hamming_dist = 0
+
+    # for i in range(test_data.shape[0]):
+    #     output = net(Variable(torch.from_numpy(test_data[i]).float()))
+    #     correct += np.all(test_labels[i] == output.data.numpy().round().astype(int))
+    # total = test_labels.shape[0]
+
+    for signals, appliances in test_loader:
+        signals = Variable(signals)
+        outputs = net(signals)
+        total += appliances.size(0)
+        hamming_dist += np.count_nonzero(appliances == torch.round(outputs.data))/util.nn_config['num_classes']
+        correct += np.sum(np.all(appliances == torch.round(outputs.data), axis=1))
+        if np.sum(np.all(appliances == torch.round(outputs.data), axis=1)) != 30:
+            a = 1
+
+    test_hamming_loss = 100 * hamming_dist / total
+    test_exact_match = 100 * correct / total
+    #print('Exact Match Accuracy of the network on the test set: {0:.2f} %'.format(test_exact_match))
+    #print('Hamming Accuracy of the network on the test set: {0:.2f} %'.format(test_hamming_loss))
+
+    return test_exact_match

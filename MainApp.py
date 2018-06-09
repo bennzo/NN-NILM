@@ -3,6 +3,7 @@
 
 import sys
 import numpy as np
+import pandas as pd
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 
@@ -10,6 +11,7 @@ import MainAppDesign
 import data
 import network
 import utilities
+
 
 
 class MainApp(QMainWindow, MainAppDesign.Ui_MainWindow):
@@ -56,7 +58,7 @@ class MainApp(QMainWindow, MainAppDesign.Ui_MainWindow):
 
     def load_signal(self):
         signal_path = QFileDialog.getOpenFileName(self, "Select File")[0]
-        self.signal = np.loadtxt(signal_path)
+        self.signal = pd.read_csv(signal_path, header=None).values.flatten()
 
     def disaggregate_signal(self):
         network.disaggregate(self.signal)
@@ -83,7 +85,7 @@ class MainApp(QMainWindow, MainAppDesign.Ui_MainWindow):
 
     def plot_signal(self):
         if self.signal_file is None:
-            self.signal_file = np.loadtxt(self.dataPath + 'signal_sum_val.txt')
+            self.signal_file = pd.read_csv(self.dataPath + 'signal_sum_val.txt', header=None).values.flatten()
 
         comb = '0b' + str(int(self.app1_chk)) + str(int(self.app2_chk)) +\
                       str(int(self.app3_chk)) + str(int(self.app4_chk)) + str(int(self.app5_chk))
