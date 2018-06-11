@@ -9,12 +9,12 @@ config = {
 }
 
 preproc_config = {
-    'Fs': 6400,                 # Measured loads frequency
-    #'Fs': 2*650+50,              # Generated loads frequency
+    #'Fs': 6400,                 # Measured loads frequency
+    'Fs': 2*650+50,              # Generated loads frequency
     'sample_time': 0.1,
     'noise': False,
-    'noise_percentage': 0.1,
-    'train_test_ratio': 0.8,
+    'noise_percentage': 0.5,
+    'train_test_ratio': 0.9,
     'threshold': 1
 }
 
@@ -193,7 +193,7 @@ def compare_input(I1,I2):
 
 def plot_signal(s_path, index=-1):
     label_path = s_path.replace('_val', '_label')
-    sample_win = int(preproc_config['Fs']*preproc_config['sample_time'])
+    sample_win = int(preproc_config['Fs']*preproc_config['sample_time'])//5
     # I = np.loadtxt(s_path)
     # I_label = np.loadtxt(label_path, delimiter=',')
     I = pd.read_csv(s_path, header=None).values.flatten()

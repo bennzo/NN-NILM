@@ -199,8 +199,8 @@ def data_init_measured(data_dir):
 def data2input(raw_data,raw_labels):
     data_size = raw_data.size
     Fs = util.preproc_config['Fs']
-    #win = int(util.preproc_config['Fs']*util.preproc_config['sample_time'])
-    win = 128
+    win = int(util.preproc_config['Fs']*util.preproc_config['sample_time']) # For Simulated data
+    #win = 128
 
     data = np.zeros((int(np.ceil(data_size/win)),14))
     labels = np.zeros((int(np.ceil(data_size/win)),5))
@@ -289,7 +289,7 @@ def data_init_comb_test(data_dir, train_perm, test_perm):
 def data_init_for_plot(data_dir, test_perm):
     raw_data, raw_labels = util.load_sum(data_dir)
     test_comb = test_comb_default[0:test_perm]
-    random.shuffle(test_comb)
+    #random.shuffle(test_comb)
     # test_comb = np.sort(test_comb[0:test_perm])
     num_classes = util.nn_config['num_classes']
     data_size = raw_data.size

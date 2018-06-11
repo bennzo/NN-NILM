@@ -103,14 +103,53 @@ from pathlib import Path
 #network.train('data\\real_world_new\\', data.data_init_comb)
 
 # Plot Accuracy for 4,8,16,32 permutations against test permutations
-
 #network.train('data\\real_world_new\\', lambda path: data.data_init_comb_test(path, train_perm=32, test_perm=2))
+if (False):
+    #models = [32,16,8,4]
+    models = [4,8,16,32]
+    accs_exact = np.zeros((4,28))
+    accs_hamming = np.zeros((4, 28))
+    test_data_unscaled, test_labels = data.data_init_for_plot('data\\real_world_new\\', 32)
+    for j in range(4):
+        accs_exact[j,:], accs_hamming[j,:] = network.train_plot(test_data_unscaled,test_labels,data.test_comb_default,models[j])
+    np.savetxt('stats_ex.txt',accs_exact, fmt='%.7f')
+    np.savetxt('stats_ham.txt', accs_hamming, fmt='%.7f')
 
-if (True):
-    models = ['32','16','8','4']
-    accs = np.zeros((4,28))
-    for i in range(0,28):
-        test_data_unscaled, test_labels = data.data_init_for_plot('data\\real_world_new\\', i+4)
-        for j in range(4):
-            accs[j,i] = network.train_plot(test_data_unscaled,test_labels,'model'+str(models[j])+'.pkl')
-    np.savetxt('stats.txt',accs, fmt='%.7f')
+if (False):
+    stats_ex = np.loadtxt('stats_ex.txt', delimiter=' ')
+    stats_ham = np.loadtxt('stats_ham.txt', delimiter=' ')
+
+    fig1 = plt.figure()
+    p1 = fig1.add_subplot(111)
+    p1.plot(range(4, 32), stats_ex[0], 'b', linestyle='--', label='4')
+    p1.plot(range(4, 32), stats_ex[1], 'r', linestyle='--', label='8')
+    p1.plot(range(4, 32), stats_ex[2], 'g', linestyle='--', label='16')
+    p1.plot(range(4, 32), stats_ex[3], 'y', linestyle='--', label='32')
+    p1.grid(True)
+    p1.set_title('Exact Match Accuracy against No. Permutations')
+    p1.set_xlabel('Permutations')
+    p1.set_ylabel('Accuracy')
+    p1.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., title='Combs. Trained')
+
+
+    fig2 = plt.figure()
+    p2 = fig2.add_subplot(111)
+    p2.plot(range(4, 32),stats_ham[0],  'b', linestyle='--', label='4')
+    p2.plot(range(4, 32), stats_ham[1], 'r', linestyle='--', label='8')
+    p2.plot(range(4, 32), stats_ham[2], 'g', linestyle='--', label='16')
+    p2.plot(range(4, 32), stats_ham[3], 'y', linestyle='--', label='32')
+    p2.grid(True)
+    p2.set_title('Hamming Accuracy against No. Permutations')
+    p2.set_xlabel('Permutations')
+    p2.set_ylabel('Accuracy')
+    p2.legend(bbox_to_anchor=(1.01, 1), loc=2, borderaxespad=0., title='Combs. Trained')
+
+
+    plt.show()
+# ------------------------------------------------------- #
+
+# Simulation Results
+#network.train('data\\real_world_new\\', data.data_init_measured)
+
+# S
+utilities.plot_signal('data\\lab-noiseless\\signal_sum_val.txt')
