@@ -229,6 +229,22 @@
        <string>Clear</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="btn_disaggComb">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>80</x>
+        <y>160</y>
+        <width>61</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Disagg</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QListWidget" name="lst_sigCombs">
      <property name="geometry">

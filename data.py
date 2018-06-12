@@ -38,6 +38,7 @@ train_comb_default = [
     '0b11110',
     '0b11111'
             ]
+
 test_comb_default = [
     '0b00000',
     '0b00001',
@@ -239,89 +240,3 @@ def signal2input(signal):
     I_fft_amp, I_fft_phase = pp.fft_amp_phase(I_fft)
     input = pp.fft2input(I_fft_amp, I_fft_phase, util.preproc_config['Fs'])
     return input
-
-def data_init_comb_test(data_dir, train_perm, test_perm):
-    raw_data, raw_labels = util.load_sum(data_dir)
-
-    train_comb = train_comb_default[0:train_perm]
-    test_comb = test_comb_default[0:test_perm]
-
-    num_classes = util.nn_config['num_classes']
-    data_size = raw_data.size
-    sig_len = data_size//(2**num_classes)
-
-    manual = True
-    if not manual:
-        train_comb = ['0b' + s for s in ["".join(seq) for seq in itertools.product("01", repeat=5)]]
-        random.shuffle(train_comb)
-        test_comb = ['0b' + s for s in ["".join(seq) for seq in itertools.product("01", repeat=5)]]
-        random.shuffle(test_comb)
-        for _ in range(32 - train_perm):
-            train_comb.pop()
-        for _ in range(32 - test_perm):
-            test_comb.pop()
-
-    raw_train_data = np.zeros((sig_len*train_perm),dtype=float)
-    raw_train_label = np.zeros((sig_len*train_perm,num_classes), dtype=float)
-    raw_test_data = np.zeros((sig_len * test_perm), dtype=float)
-    raw_test_label = np.zeros((sig_len * test_perm, num_classes), dtype=float)
-
-    i = 0
-    for comb in train_comb:
-        comb = int(comb, 2)
-        raw_train_data[i:i+sig_len] = raw_data[comb * sig_len:(1 + comb) * sig_len]
-        raw_train_label[i:i+sig_len,:] = raw_labels[comb * sig_len:(1 + comb) * sig_len]
-        i = i + sig_len
-    train_data_unscaled, train_labels = data2input(raw_train_data, raw_train_label)
-
-    # ------------- Predefined test -------------- #
-    i = 0
-    for comb in test_comb:
-        comb = int(comb, 2)
-        raw_test_data[i:i+sig_len] = raw_data[comb * sig_len:(1 + comb) * sig_len]
-        raw_test_label[i:i+sig_len,:] = raw_labels[comb * sig_len:(1 + comb) * sig_len]
-        i = i + sig_len
-    test_data_unscaled, test_labels   = data2input(raw_test_data, raw_test_label)
-    # -------------------------------------------- #
-
-    return train_data_unscaled, train_labels, test_data_unscaled, test_labels
-
-def data_init_for_plot(data_dir, test_perm):
-    raw_data, raw_labels = util.load_sum(data_dir)
-    test_comb = test_comb_default[0:test_perm]
-    #random.shuffle(test_comb)
-    # test_comb = np.sort(test_comb[0:test_perm])
-    num_classes = util.nn_config['num_classes']
-    data_size = raw_data.size
-    sig_len = data_size//(2**num_classes)
-
-    manual = True
-    if not manual:
-        test_comb = ['0b' + s for s in ["".join(seq) for seq in itertools.product("01", repeat=5)]]
-        random.shuffle(test_comb)
-        for _ in range(32 - test_perm):
-            test_comb.pop()
-
-    raw_test_data = np.zeros((sig_len * test_perm), dtype=float)
-    raw_test_label = np.zeros((sig_len * test_perm, num_classes), dtype=float)
-
-    i = 0
-    for comb in test_comb:
-        comb = int(comb, 2)
-        raw_test_data[i:i+sig_len] = raw_data[comb * sig_len:(1 + comb) * sig_len]
-        raw_test_label[i:i+sig_len,:] = raw_labels[comb * sig_len:(1 + comb) * sig_len]
-        i = i + sig_len
-    test_data_unscaled, test_labels   = data2input(raw_test_data, raw_test_label)
-
-    # raw_test_data = np.array([], dtype=float)
-    # raw_test_label = np.array([]).reshape((0,num_classes))
-
-    # ------------- Predefined test -------------- #
-    # for comb in test_comb_default:
-    #     comb = int(comb, 2)
-    #     raw_test_data = np.concatenate((raw_test_data, raw_data[comb*sig_len:(1 + comb)*sig_len]))
-    #     raw_test_label = np.vstack((raw_test_label, raw_labels[comb*sig_len:(1 + comb)*sig_len]))
-    # test_data_unscaled, test_labels   = data2input(raw_test_data, raw_test_label)
-    # -------------------------------------------- #
-
-    return test_data_unscaled, test_labels

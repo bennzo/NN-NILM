@@ -35,6 +35,8 @@ class MainApp(QMainWindow, MainAppDesign.Ui_MainWindow):
         self.signal = None
         self.signal_file = None
 
+        self.Net = None
+
         # ---------- Control ------------- #
         self.btn_loadData.clicked.connect(self.load_data)
 
@@ -46,6 +48,7 @@ class MainApp(QMainWindow, MainAppDesign.Ui_MainWindow):
         self.btn_addComb.clicked.connect(self.add_comb)
         self.btn_clearComb.clicked.connect(self.clear_comb)
         self.btn_plotComb.clicked.connect(self.plot_signal)
+        self.btn_disaggComb.clicked.connect(self.dissaggregate_comb)
 
         self.btn_trainAll.clicked.connect(lambda: self.train_net(comb=False))
         self.btn_train.clicked.connect(lambda: self.train_net(comb=True))
@@ -94,14 +97,29 @@ class MainApp(QMainWindow, MainAppDesign.Ui_MainWindow):
         win = 128*2
         utilities.plot_signal_gui(self.signal_file[int(comb,2)*sig_len:int(comb,2)*sig_len+win])
 
+    def dissaggregate_comb(self):
+        if self.signal_file is None:
+            self.signal_file = pd.read_csv(self.dataPath + 'signal_sum_val.txt', header=None).values.flatten()
+
+        comb = '0b' + str(int(self.app1_chk)) + str(int(self.app2_chk)) +\
+                      str(int(self.app3_chk)) + str(int(self.app4_chk)) + str(int(self.app5_chk))
+
+        sig_len = self.signal_file.size//(2**5)
+        win = 128*2
+        self.signal = self.signal_file[int(comb,2)*sig_len:int(comb,2)*sig_len+win]
+        self.disaggregate_signal()
+
     def train_net(self, comb):
         self.txt_resultsText.clear()
         if (self.dataPath is not None):
+            print("Loading Data...")
             if (comb and len(self.app_combs) > 0):
-                data.train_comb = self.app_combs
-                network.train(self.dataPath, lambda path: data.data_init_comb(path, train_comb=self.app_combs, test_comb=self.app_combs))
+                train_data, train_labels, test_data, test_labels = data.data_init_comb(self.dataPath, train_comb=self.app_combs, test_comb=self.app_combs)
+                network.train(train_data, train_labels, test_data, test_labels)
             if (not comb):
-                network.train(self.dataPath, data.data_init_measured)
+                train_data, train_labels, test_data, test_labels = data.data_init_measured(self.dataPath)
+                network.train(train_data, train_labels, test_data, test_labels)
+        self.btn_disaggComb.setEnabled(True)
 
 # Logger class
 # Redirects stdout to the result text frame in the gui

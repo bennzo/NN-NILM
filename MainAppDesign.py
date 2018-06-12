@@ -67,6 +67,10 @@ class Ui_MainWindow(object):
         self.btn_clearComb = QtWidgets.QPushButton(self.box_combBox)
         self.btn_clearComb.setGeometry(QtCore.QRect(80, 130, 61, 28))
         self.btn_clearComb.setObjectName("btn_clearComb")
+        self.btn_disaggComb = QtWidgets.QPushButton(self.box_combBox)
+        self.btn_disaggComb.setEnabled(False)
+        self.btn_disaggComb.setGeometry(QtCore.QRect(80, 160, 61, 28))
+        self.btn_disaggComb.setObjectName("btn_disaggComb")
         self.lst_sigCombs = QtWidgets.QListWidget(self.frm_signalMenu)
         self.lst_sigCombs.setGeometry(QtCore.QRect(200, 20, 151, 191))
         self.lst_sigCombs.setObjectName("lst_sigCombs")
@@ -101,4 +105,5 @@ class Ui_MainWindow(object):
         self.btn_addComb.setText(_translate("MainWindow", "Add"))
         self.btn_plotComb.setText(_translate("MainWindow", "Plot"))
         self.btn_clearComb.setText(_translate("MainWindow", "Clear"))
+        self.btn_disaggComb.setText(_translate("MainWindow", "Disagg"))
 

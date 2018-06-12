@@ -9,8 +9,8 @@ config = {
 }
 
 preproc_config = {
-    #'Fs': 6400,                 # Measured loads frequency
-    'Fs': 2*650+50,              # Generated loads frequency
+    'Fs': 6400,                 # Measured loads frequency
+    #'Fs': 2*650+50,              # Generated loads frequency
     'sample_time': 0.1,
     'noise': False,
     'noise_percentage': 0.5,
@@ -38,8 +38,10 @@ loads = [
     'Air_Conditioner2_int_DB'
 ]
 
-
-# noinspection PyTypeChecker
+# Generating a synthetic signal,
+# path - a folder where the signal will be saved
+# n - signal index
+# states - number of states incase of a changing state appliance
 def gen_I(path, n=1, states=1):
     state_interval = 5
     harmony_n = np.random.randint(2,8)
@@ -101,7 +103,9 @@ def gen_I(path, n=1, states=1):
     save_signal(n, I_t, label, path, F, A, P)
     return I_t, label
 
-
+# Generates a main signal which is a summary of a few generated signals
+# path - a folder where the signal will be saved
+# n - number of appliances
 def gen_sum(path, n):
     S_sum, label_sum = gen_I(path)
     for i in range(2, n+1):
@@ -114,7 +118,6 @@ def gen_sum(path, n):
     np.savetxt(path+"signal_sum_val.txt", S_sum, fmt='%.7f', delimiter='\n')
     np.savetxt(path+"signal_sum_label.txt", np.transpose(label_sum), fmt='%i', delimiter=',')
 
-# TODO: Change loadtxt to panda's read_csv
 def gen_sum_measured(path):
     lst='Signal made from the following loads:\n'+loads[0]+'\n'
     I_sum = np.loadtxt(path+'val_'+loads[0]+'.txt')
@@ -160,7 +163,6 @@ def save_signal(i, I, label, path, F, A, P):
     np.savetxt(path+"signal_{}_val.txt".format(i), I, fmt='%.7f', delimiter='\n')
     np.savetxt(path+"signal_{}_label.txt".format(i), label, fmt='%i', delimiter='\n')
     states=len(F)
-    # np.savetxt(path + "signal_{}_prop.txt".format(i), (F[0], A[0], P[0]), fmt='%.3f', delimiter=',')
     f = open(path+"signal_{}_prop.txt".format(i), 'a+')
     f.seek(0)
     f.truncate()
@@ -180,8 +182,6 @@ def load_signal(i, folder_name):
 
 
 def load_sum(folder_name):
-    # I = np.loadtxt(folder_name + "signal_sum_val.txt")
-    # I_label = np.loadtxt(folder_name + "signal_sum_label.txt", delimiter=',')
     I = pd.read_csv(folder_name + "signal_sum_val.txt", header=None).values.flatten()
     I_label = pd.read_csv(folder_name + "signal_sum_label.txt", sep=',', header=None).values
     return I, I_label
@@ -291,22 +291,3 @@ def plot_signal_gui(sampled_I):
     p3.set_ylabel('Degree[$^\circ$]')
 
     plt.show()
-
-
-def mat2txt(f_path,out_path):
-    mat = sc.loadmat(f_path)
-    raw = mat[((f_path.split('\\', 1)[-1])[0:(len((f_path.split('\\', 1)[-1]))-4)])][0:1][0]
-    if np.shape(raw[0])[1] < 3:
-        phase_idx = 0
-    else:
-        phase_idx = np.argmax(np.sum(np.abs(raw[0]), axis=0)[0:3])
-
-    raw_mat = np.array([raw[i][:, phase_idx] for i in range(len(raw))])
-    data = raw_mat.reshape((1,raw_mat.size))
-    np.savetxt(out_path, data, fmt='%.7f', delimiter='\n')
-
-
-if __name__ == "__main__":
-    path='data//'
-    gen_sum(path)
-    print('Data generated successfully')
