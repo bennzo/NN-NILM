@@ -5,7 +5,6 @@ import torch.utils.data as data_utils
 import torch.utils.data
 from torch.autograd import Variable
 import numpy as np
-import sklearn.preprocessing
 import utilities as util
 import data
 
@@ -31,14 +30,13 @@ class Net(nn.Module):
         return out
 
 def train(train_data, train_labels, test_data, test_labels):
-    # Build data arrays
-    #train_data, train_labels, test_data, test_labels = data_init_func(data_folder)
-
-    # Scale data
-    # train_data = sklearn.preprocessing.scale(train_data, axis=0, with_std=False)
-    # test_data = sklearn.preprocessing.scale(test_data, axis=0, with_std=False)
-
     # Pytorch datasets
+
+    # Amp Only
+    if (util.nn_config['input_size'] == 7):
+        train_data = train_data[:,:7]
+        test_data = test_data[:, :7]
+
     train_dataset = data_utils.TensorDataset(torch.from_numpy(train_data).float(), torch.from_numpy(train_labels).float())
     test_dataset = data_utils.TensorDataset(torch.from_numpy(test_data).float(), torch.from_numpy(test_labels).float())
 
@@ -57,28 +55,36 @@ def train(train_data, train_labels, test_data, test_labels):
     train_accuracy_1 = np.zeros(util.nn_config['num_epochs'])
     # Train the Model
     for epoch in range(util.nn_config['num_epochs']):
+        correct = 0
+        total = 0
         for i, (signals, appliances) in enumerate(train_loader):
             # Convert torch tensor to Variable
             signals = Variable(signals)
             appliances = Variable(appliances)
-
+            # for sig in signals:
+            #     if (((sig[0:7]-test_input[0:7]).abs().sum() < 0.001).any()):
+            #         aaa = 1
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # forward + backward + optimize
             outputs = net(signals)
+            total += appliances.size(0)
+            correct += np.sum(np.all(appliances.data == torch.round(outputs.data), axis = 1))
+
             loss = criterion(outputs, appliances)
             loss.backward()
             optimizer.step()
+
         # print loss at the end of each batch
-        correct = 0
-        total = 0
-        for signals, appliances in train_loader:
-            signals = Variable(signals)
-            appliances = Variable(appliances)
-            outputs = net(signals)
-            total += appliances.size(0)
-            correct += np.sum(np.all(appliances.data == torch.round(outputs.data), axis = 1))
+        # correct = 0
+        # total = 0
+        # for signals, appliances in train_loader:
+        #     signals = Variable(signals)
+        #     appliances = Variable(appliances)
+        #     outputs = net(signals)
+        #     total += appliances.size(0)
+        #     correct += np.sum(np.all(appliances.data == torch.round(outputs.data), axis = 1))
         train_accuracy_1[epoch] = correct / total
         print('Accuracy of the network on the training set after the {0} epoch: {1:.2f} %'.format(epoch + 1, 100 * correct / total))
 
@@ -109,5 +115,9 @@ def disaggregate(signal):
     model.eval()
 
     input = data.signal2input(signal)
+
+    # Amp only
+    if (util.nn_config['input_size'] == 7):
+        input = input[:7]
     output = model(Variable(torch.from_numpy(input).float()))
     print(output.data.numpy().round().astype(int))

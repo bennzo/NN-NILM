@@ -200,20 +200,23 @@ def data_init_measured(data_dir):
 def data2input(raw_data,raw_labels):
     data_size = raw_data.size
     Fs = util.preproc_config['Fs']
-    win = int(util.preproc_config['Fs']*util.preproc_config['sample_time']) # For Simulated data
-    #win = 128
+    #win = int(util.preproc_config['Fs']*util.preproc_config['sample_time']) # For Simulated data
+    win = 128
 
     data = np.zeros((int(np.ceil(data_size/win)),14))
     labels = np.zeros((int(np.ceil(data_size/win)),5))
 
     k = 0
-    for i in range(0, data_size, win):
+    i = 0
+    while (i + win < data_size):
+    #for i in range(0, data_size, win):
         # Filter out windows with a change in active appliances
         label = raw_labels[i]
         skip = False
         for t in range(win):
-            if np.all(label == raw_labels[t]):
-                skip == True
+            if np.any(label != raw_labels[i+t]):
+                skip = True
+                i = i+t
                 break
         if skip:
             continue
@@ -225,6 +228,7 @@ def data2input(raw_data,raw_labels):
         data[k, :] = pp.fft2input(I_fft_amp, I_fft_phase, Fs)
         labels[k, :] = label
         k = k + 1
+        i = i + win
         # if i == 0:
         #     data = pp.fft2input(I_fft_amp, I_fft_phase, Fs)
         #     labels = label

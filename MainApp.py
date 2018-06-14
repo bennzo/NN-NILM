@@ -3,7 +3,9 @@
 
 import sys
 import numpy as np
-import pandas as pd
+import torch
+from torch.autograd import Variable
+from pandas import read_csv
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 
@@ -61,7 +63,7 @@ class MainApp(QMainWindow, MainAppDesign.Ui_MainWindow):
 
     def load_signal(self):
         signal_path = QFileDialog.getOpenFileName(self, "Select File")[0]
-        self.signal = pd.read_csv(signal_path, header=None).values.flatten()
+        self.signal = read_csv(signal_path, header=None).values.flatten()
 
     def disaggregate_signal(self):
         network.disaggregate(self.signal)
@@ -88,7 +90,7 @@ class MainApp(QMainWindow, MainAppDesign.Ui_MainWindow):
 
     def plot_signal(self):
         if self.signal_file is None:
-            self.signal_file = pd.read_csv(self.dataPath + 'signal_sum_val.txt', header=None).values.flatten()
+            self.signal_file = read_csv(self.dataPath + 'signal_sum_val.txt', header=None).values.flatten()
 
         comb = '0b' + str(int(self.app1_chk)) + str(int(self.app2_chk)) +\
                       str(int(self.app3_chk)) + str(int(self.app4_chk)) + str(int(self.app5_chk))
@@ -99,15 +101,20 @@ class MainApp(QMainWindow, MainAppDesign.Ui_MainWindow):
 
     def dissaggregate_comb(self):
         if self.signal_file is None:
-            self.signal_file = pd.read_csv(self.dataPath + 'signal_sum_val.txt', header=None).values.flatten()
+            self.signal_file = read_csv(self.dataPath + 'signal_sum_val.txt', header=None).values.flatten()
 
+        comb_rep = np.array([self.app1_chk, self.app2_chk, self.app3_chk, self.app4_chk, self.app5_chk]).astype(int)
         comb = '0b' + str(int(self.app1_chk)) + str(int(self.app2_chk)) +\
                       str(int(self.app3_chk)) + str(int(self.app4_chk)) + str(int(self.app5_chk))
 
         sig_len = self.signal_file.size//(2**5)
-        win = 128*2
+        win = 128
         self.signal = self.signal_file[int(comb,2)*sig_len:int(comb,2)*sig_len+win]
         self.disaggregate_signal()
+
+        # input = data.signal2input(self.signal)
+        # output = self.Net(Variable(torch.from_numpy(input).float()))
+        # print('str(output.data.numpy().round().astype(int))')
 
     def train_net(self, comb):
         self.txt_resultsText.clear()
@@ -115,10 +122,10 @@ class MainApp(QMainWindow, MainAppDesign.Ui_MainWindow):
             print("Loading Data...")
             if (comb and len(self.app_combs) > 0):
                 train_data, train_labels, test_data, test_labels = data.data_init_comb(self.dataPath, train_comb=self.app_combs, test_comb=self.app_combs)
-                network.train(train_data, train_labels, test_data, test_labels)
+                _,_,self.Net= network.train(train_data, train_labels, test_data, test_labels)
             if (not comb):
                 train_data, train_labels, test_data, test_labels = data.data_init_measured(self.dataPath)
-                network.train(train_data, train_labels, test_data, test_labels)
+                _,_, self.Net = network.train(train_data, train_labels, test_data, test_labels)
         self.btn_disaggComb.setEnabled(True)
 
 # Logger class

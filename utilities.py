@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.io as sc
-import pandas as pd
+from pandas import read_csv
 from preproc import *
 
 config = {
@@ -13,7 +12,7 @@ preproc_config = {
     #'Fs': 2*650+50,              # Generated loads frequency
     'sample_time': 0.1,
     'noise': False,
-    'noise_percentage': 0.5,
+    'noise_percentage': 0,
     'train_test_ratio': 0.9,
     'threshold': 1
 }
@@ -22,8 +21,8 @@ nn_config = {
     'input_size': 14,
     'output_size': 5,
     'num_classes': 5,
-    'num_epochs': 50,
-    'batch_size': 30,
+    'num_epochs': 30,
+    'batch_size': 50,
     'learning_rate': 1e-3
 }
 
@@ -182,8 +181,8 @@ def load_signal(i, folder_name):
 
 
 def load_sum(folder_name):
-    I = pd.read_csv(folder_name + "signal_sum_val.txt", header=None).values.flatten()
-    I_label = pd.read_csv(folder_name + "signal_sum_label.txt", sep=',', header=None).values
+    I = read_csv(folder_name + "signal_sum_val.txt", header=None).values.flatten()
+    I_label = read_csv(folder_name + "signal_sum_label.txt", sep=',', header=None).values
     return I, I_label
 
 
@@ -196,8 +195,8 @@ def plot_signal(s_path, index=-1):
     sample_win = int(preproc_config['Fs']*preproc_config['sample_time'])//5
     # I = np.loadtxt(s_path)
     # I_label = np.loadtxt(label_path, delimiter=',')
-    I = pd.read_csv(s_path, header=None).values.flatten()
-    I_label = pd.read_csv(label_path, sep=',', header=None).values
+    I = read_csv(s_path, header=None).values.flatten()
+    I_label = read_csv(label_path, sep=',', header=None).values
 
     if index > (len(I)-sample_win-1):
         print('index inserted is not valid')
