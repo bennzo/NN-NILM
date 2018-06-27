@@ -18,7 +18,7 @@ preproc_config = {
 }
 
 nn_config = {
-    'input_size': 14,
+    'input_size': 7,
     'output_size': 5,
     'num_classes': 5,
     'num_epochs': 30,
